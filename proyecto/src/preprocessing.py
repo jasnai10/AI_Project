@@ -34,7 +34,7 @@ URL_ZIP = "https://raw.githubusercontent.com/jasnai10/AI_Project/main/proyecto/d
 SEMILLA = 42
 UMBRAL_BAJO_PESO = 2500  # g, criterio OMS
 
-# Rangos válidos (EDA, sección 4.3); fuera de ellos el valor pasa a NaN
+# Rangos válidos (tal como se explicó en el EDA); fuera de ellos el valor pasa a NaN
 RANGOS = {
     "PESO_NACIDO": (500, 6000),
     "DUR_EMB_PARTO": (20, 45),
@@ -56,23 +56,21 @@ MAPA_FINANCIADOR = {
     "SANIDAD NAVAL": "SANIDAD FFAA/PNP", "SANIDAD PNP": "SANIDAD FFAA/PNP",
 }
 MAPA_NIVEL = {
-    "INCIAL/PRE-ESCOLAR": "NINGUN NIVEL O INICIAL",   # corrige además la errata del dataset
+    "INCIAL/PRE-ESCOLAR": "NINGUN NIVEL O INICIAL",  # Corrección del dataset
     "NINGUN NIVEL/ILETRADO": "NINGUN NIVEL O INICIAL",
 }
 
 CORTES_EDAD = [9, 17, 24, 34, 39, 55]
 ETIQUETAS_EDAD = ["<=17", "18-24", "25-34", "35-39", ">=40"]
 
-# Features finales (EDA, sección 10)
+# Features finales 
 CATEGORICAS = ["Nivel_Instruccion", "Financiador_Parto", "Tipo_Parto", "sexo_nacido",
                "departamento", "pais_grupo"]
 NUMERICAS = ["Num_embar_madre", "nacmuer_abort_madre"]
 SOLO_ESCENARIO_B = ["DUR_EMB_PARTO"]
 
 
-# ---------------------------------------------------------------------------
-# 1. Carga
-# ---------------------------------------------------------------------------
+# 1. Cargar datos
 
 def _obtener_zip(ruta_zip=None, url=URL_ZIP):
     """Devuelve la ruta a un ZIP válido: el local si existe y no es un puntero de Git LFS; si no, lo descarga."""
@@ -138,9 +136,7 @@ def cargar_cnv(ruta_zip=None, url=URL_ZIP, csv_reparado=None, verbose=True):
     return df, reporte
 
 
-# ---------------------------------------------------------------------------
 # 2. Limpieza
-# ---------------------------------------------------------------------------
 
 def _cat_a_num(s, mapa=None):
     """Convierte una columna 'category' a número operando sobre sus categorías (rápido en millones de filas)."""
@@ -207,9 +203,8 @@ def limpiar(df_raw, verbose=True):
     return out
 
 
-# ---------------------------------------------------------------------------
+
 # 3. Selección de features por escenario
-# ---------------------------------------------------------------------------
 
 def columnas_features(escenario="A", edad="grupo"):
     """
@@ -244,7 +239,7 @@ def seleccionar_features(df, escenario="A", target="bajo_peso", edad="grupo", ve
     completos = df[cols].notna().all(axis=1)
     X = df.loc[completos, cols].copy()
     for c in cat:
-        X[c] = X[c].cat.remove_unused_categories()   # se mantiene 'category': ahorra memoria
+        X[c] = X[c].cat.remove_unused_categories()  
     y = df.loc[completos, target].copy()
     if verbose:
         print(f"Escenario {escenario.upper()} | target={target} | {len(cols)} features | "
@@ -252,9 +247,8 @@ def seleccionar_features(df, escenario="A", target="bajo_peso", edad="grupo", ve
     return X, y
 
 
-# ---------------------------------------------------------------------------
+
 # 4. Partición y preprocesador
-# ---------------------------------------------------------------------------
 
 def dividir(X, y, test_size=0.2, semilla=SEMILLA):
     """
