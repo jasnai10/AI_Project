@@ -11,7 +11,7 @@ El conjunto de datos **Registros de Nacidos Vivos en el Perú (2015–2025)** pr
 | Atributo | Descripción |
 |---|---|
 | Entidad responsable | Ministerio de Salud (MINSA) |
-| Número de registros | 4 782 338 |
+| Número de registros | 4 874 510 |
 | Periodo cubierto | 2015 – 2025 (corte al 30 de noviembre de 2025) |
 | Número de variables | 22 |
 | Cobertura geográfica | Nacional, con desagregación por ubigeo distrital |
