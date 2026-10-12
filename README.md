@@ -80,13 +80,20 @@ proyecto/
 
 ## Cómo ejecutar
 
-Los notebooks están preparados para **Google Colab**:
+Los notebooks están preparados para **Google Colab**. Se abren directamente desde estos enlaces (se requiere una cuenta de Google):
 
-1. Abrir el notebook desde GitHub en Colab (*Archivo → Abrir cuaderno → GitHub*).
-2. Ejecutar todas las celdas en orden (*Entorno de ejecución → Ejecutar todas*). La primera celda clona el repositorio, y `02_modelos.ipynb` importa `src/preprocessing.py` desde ahí.
-3. Ejecutar primero `01_eda.ipynb` y luego `02_modelos.ipynb`. Cada uno tarda unos minutos.
+- [`01_eda.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/01_eda.ipynb): análisis exploratorio.
+- [`02_modelos.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/02_modelos.ipynb): baseline.
 
-Para regenerar `data/processed/cnv_limpio.csv.gz`, cambiar `GUARDAR_PROCESADO = True` en la configuración de `02_modelos.ipynb`.
+Con el notebook abierto, ejecutar todas las celdas desde **Entorno de ejecución → Ejecutar todas**. La primera celda descarga automáticamente el repositorio en la sesión de Colab, así que no es necesario subir ningún archivo. Se recomienda ejecutar primero `01_eda.ipynb` y luego `02_modelos.ipynb`.
+
+Si los enlaces no funcionan, también se pueden abrir manualmente:
+
+1. Entrar a [Google Colab](https://colab.research.google.com/) y crear un cuaderno con **Nuevo cuaderno**.
+2. En el menú superior del cuaderno, ir a **Archivo → Abrir cuaderno** y elegir **GitHub** en el panel izquierdo.
+3. Pegar `https://github.com/jasnai10/AI_Project` en el campo de búsqueda, verificar que la rama sea `main` y hacer clic en el notebook en la lista **Ruta**.
+
+Para regenerar `data/processed/cnv_limpio.csv.gz`, cambiar `GUARDAR_PROCESADO = True` en la primera celda de código de `02_modelos.ipynb` antes de ejecutarlo.
 
 ## Referencias
 
