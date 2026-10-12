@@ -59,15 +59,23 @@ proyecto/
 ├── README.md
 ├── ENTREGABLE_PARCIAL.md
 ├── data/
-│   ├── raw/            # dataset original (dataset.zip) y su descripción
-│   └── processed/      # dataset limpio (cnv_limpio.csv.gz)
+│   ├── raw/
+│   │   ├── dataset.zip                  # dataset original del CNV
+│   │   └── Información del dataset.md   # origen, variables y permisos
+│   └── processed/
+│       └── cnv_limpio.csv.gz            # dataset limpio generado con src/preprocessing.py
 ├── notebooks/
-│   ├── 01_eda.ipynb
-│   └── 02_modelos.ipynb
+│   ├── 01_eda.ipynb                     # análisis exploratorio
+│   └── 02_modelos.ipynb                 # baseline
 ├── src/
-│   └── preprocessing.py
+│   └── preprocessing.py                 # carga, limpieza y selección de features
 ├── results/
-└── papers/             # un paper por integrante
+│   └── README.md                        # descripción de los resultados del entregable final
+└── papers/
+    ├── paper_Jair_Aguilera.pdf
+    ├── paper_luis_araujo.pdf
+    ├── paper_Nilton_Condori.pdf
+    └── paper_Pedro_Vilcayauri.pdf
 ```
 
 ## Cómo ejecutar
