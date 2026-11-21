@@ -10,10 +10,9 @@ El bajo peso al nacer (< 2500 g, criterio de la OMS) está asociado a mayor morb
 
 ## Objetivo
 
-Evaluar modelos de aprendizaje automático para predecir el bajo peso al nacer a partir de los registros del CNV, distinguiendo entre:
+Evaluar modelos de aprendizaje automático para predecir el bajo peso al nacer a partir de los registros del CNV, con un único conjunto de **9 variables**: las características de la madre y del parto registradas en el certificado, más la duración del embarazo (`DUR_EMB_PARTO`).
 
-- **Escenario A (prenatal):** solo información disponible antes del parto. Es la pregunta central del proyecto.
-- **Escenario B (factores asociados):** el Escenario A más la duración del embarazo, que solo se conoce con certeza al nacer. Permite comparar los resultados con la literatura y medir cuánto del desempeño depende de esa variable.
+La duración del embarazo es, por mucho, la variable dominante (AUC univariado de 0.89, frente a 0.58 o menos de cualquier otra), y se conoce **al momento del parto, no antes**. Por eso el modelo predice a partir de lo registrado al nacer y antes del pesaje, no con anticipación al parto; esta dependencia se declara en el EDA y la asociación de las demás variables se mide condicionada a ella.
 
 ## Dataset
 
@@ -21,14 +20,16 @@ Certificados de Nacido Vivo del MINSA (Plataforma Nacional de Datos Abiertos), c
 
 ## Metodología
 
-1. **Análisis exploratorio** (`notebooks/01_eda.ipynb`): calidad de datos, distribución del target, relación de cada variable con el bajo peso y justificación de las decisiones de preprocesamiento.
+1. **Análisis exploratorio** (`notebooks/01_eda.ipynb`): calidad de datos, distribución del target, relación de cada variable con el bajo peso y justificación de las decisiones de preprocesamiento. Las 22 columnas se evalúan con seis criterios: validez, calidad, redundancia, asociación propia (condicionada a la duración del embarazo), costo y uso.
 2. **Preprocesamiento** (`src/preprocessing.py`): implementa las decisiones del EDA y es compartido por todos los notebooks de modelado. Las principales son:
    - Reparación de 388 filas con el separador `;` dentro del campo de ocupación.
-   - Conversión de los códigos de faltante (`IGNORADO`, `-1`, `99`) y de los valores fuera de rango a valores ausentes, con eliminación de casos completos.
-   - Exclusión de las variables con fuga de información (talla del recién nacido y variables definidas durante el parto), de `Estado_Civil` (baja validez del registro), de `Hijos_fallec_madre` (código `-1` ambiguo) y de `Hijos_vivo_madre` (redundante con el número de embarazos).
+   - Conversión de los códigos de faltante (`IGNORADO`, `-1`, `99`) y de los valores fuera de rango a valores ausentes, con eliminación de casos completos sobre las 9 variables (se conserva el 97.81 % de los registros con peso válido).
+   - **Features del modelo (9):** `DUR_EMB_PARTO`, `Tipo_Parto`, `departamento`, `Edad_Madre` (como grupo de edad), `Num_embar_madre`, `Nivel_Instruccion`, `Financiador_Parto`, `sexo_nacido` y `pais_grupo`. `pais_grupo` se mantiene por decisión del equipo y se interpreta como un marcador de contexto, no como un efecto de la nacionalidad.
+   - Exclusión de las variables que describen el parto o el desenlace (`TALLA_NACIDO`, `Atiende_Parto`, `Condicion_Parto`, `Lugar_Nacido`, `Ipress`), de `nacmuer_abort_madre` (faltante no aleatorio que cuesta el 79 % de las filas perdidas), de `Estado_Civil` (baja validez del registro), de `Hijos_fallec_madre` (código `-1` ambiguo), de `Hijos_vivo_madre` (redundante con el número de embarazos) y de `DESC_OCUPACION` (texto libre).
    - Agrupación de categorías poco frecuentes y construcción de `departamento` y `pais_grupo`.
-3. **Datos procesados** (`data/processed/cnv_limpio.csv.gz`): resultado de la limpieza, con 4 871 486 registros.
-4. **Baseline** (`notebooks/02_modelos.ipynb`): regresión logística con y sin balanceo de clases, siguiendo el diseño de Almeida et al. (2026), evaluada con accuracy, precisión, recall, F1-score y AUC-ROC en ambos escenarios, sobre el mismo conjunto de test (partición 80/20 estratificada).
+   - **Partición temporal:** entrenamiento y validación con 2015–2023 (80 % / 20 % al azar, estratificado) y test con 2024–2025, que se usa una sola vez al final. El preprocesador se ajusta solo con el entrenamiento y el umbral de decisión se calibra en validación. El corte del CNV es el 30/11/2025, así que 2025 no incluye diciembre. El split aleatorio 80/20 queda como referencia secundaria.
+3. **Datos procesados** (`data/processed/cnv_limpio.csv.gz`): resultado de la limpieza, con 4 871 486 registros (los que tienen peso válido).
+4. **Baseline** (`notebooks/02_modelos.ipynb`): regresión logística con y sin balanceo de clases, siguiendo el diseño de Almeida et al. (2026), evaluada con precisión, recall, F1-score, AUC-ROC y AUC-PR sobre el test temporal. Como la prevalencia de bajo peso cambia entre train/validación (6.32 %) y test (6.81 %), las métricas dependientes de la prevalencia no son comparables con las de un split aleatorio.
 
 ## Propuesta de modelos
 
@@ -50,7 +51,7 @@ Certificados de Nacido Vivo del MINSA (Plataforma Nacional de Datos Abiertos), c
 | **Random forest** | Único modelo presente en los cuatro papers: mejor modelo para estimar el peso en Khan et al. (2022), entre los tres con mayor AUROC en Ranjbar et al. (2023) y modelo de comparación en Almeida et al. (2026). |
 | **XGBoost** | Mejor modelo para predecir el bajo peso según Ranjbar et al. (2023), considerando accuracy, precisión, recall y F1-score. |
 
-Los tres modelos se entrenarán con y sin balanceo de clases y se evaluarán en los escenarios A y B, sobre el mismo conjunto de test y con las mismas métricas que el baseline.
+Los tres modelos se entrenarán con y sin balanceo de clases y se evaluarán sobre el mismo test temporal (2024–2025) y con las mismas métricas que el baseline.
 
 ## Estructura del repositorio
 
