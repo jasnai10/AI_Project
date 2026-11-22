@@ -5,7 +5,7 @@ Predicción de bajo peso al nacer (< 2500 g) con el registro de Certificados de 
 Archivos de esta carpeta:
 
 - `model_comparison.md` (este archivo): resumen de resultados y análisis detallado.
-- [`metrics.csv`](metrics.csv): tabla comparativa con las métricas en test, la matriz de confusión, el AUC-PR de validación y los hiperparámetros elegidos de cada modelo.
+- [`metrics.csv`](metrics.csv): tabla comparativa con las 6 métricas de cada modelo en el test (2024–2025).
 - [`plots/`](plots/): gráficos comparativos y gráficos de cada modelo (sección 3).
 
 > **Estado:** resultados de 4 de los 5 modelos. Falta **XGBoost** (`06_xgboost.ipynb`); las tablas y la conclusión se actualizarán cuando esté listo.
@@ -71,8 +71,6 @@ Todos los modelos usan exactamente los mismos datos, la misma partición y las m
 | RL balanceada | 39 548 | 9 359 | 87 893 | 2.2 |
 | RL SMOTE-NC | 30 790 | 18 117 | 19 006 | 0.6 |
 | Random Forest balanceado | 38 800 | 10 107 | 75 828 | 2.0 |
-
-![Casos detectados y falsas alarmas en test](plots/comparacion_confusion.png)
 
 ### 2.3 Hiperparámetros elegidos
 
@@ -164,13 +162,12 @@ Las cifras no son directamente comparables (otros países, variables, prevalenci
 
 ## 3. Gráficos
 
-Todos están en `results/plots/`. Los comparativos se generaron a partir de `metrics.csv`; los de cada modelo se extrajeron de su notebook ejecutado en Colab.
+Todos están en `results/plots/`. Los comparativos se generaron a partir de `metrics.csv`; los de cada modelo se extrajeron de su notebook ejecutado en Colab. Todos usan el test, salvo las gráficas de grilla, que muestran la selección de hiperparámetros en validación.
 
 | Archivo | Contenido |
 |---|---|
 | `comparacion_metricas.png` | Las 6 métricas de los 4 modelos en test |
 | `comparacion_recall_precision.png` | Punto de operación (recall frente a precisión) de cada modelo, con líneas de igual F1 |
-| `comparacion_confusion.png` | Casos detectados, casos perdidos y falsas alarmas de cada modelo |
 | `02_baseline_curvas_test.png` | Baseline: curvas ROC, precisión-recall y de calibración en test |
 | `03_rl_balanceada_grilla_validacion.png` | RL balanceada: AUC-PR en train y validación de la grilla |
 | `03_rl_balanceada_curvas_test.png` | RL balanceada frente al baseline: curvas ROC, precisión-recall y de calibración en test |

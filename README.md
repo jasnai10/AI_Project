@@ -27,11 +27,16 @@ Certificados de Nacido Vivo del MINSA (Plataforma Nacional de Datos Abiertos), c
    - **Features del modelo (9):** `DUR_EMB_PARTO`, `Tipo_Parto`, `departamento`, `Edad_Madre` (como grupo de edad), `Num_embar_madre`, `Nivel_Instruccion`, `Financiador_Parto`, `sexo_nacido` y `pais_grupo`. `pais_grupo` se mantiene por decisión del equipo y se interpreta como un marcador de contexto, no como un efecto de la nacionalidad.
    - Exclusión de las variables que describen el parto o el desenlace (`TALLA_NACIDO`, `Atiende_Parto`, `Condicion_Parto`, `Lugar_Nacido`, `Ipress`), de `nacmuer_abort_madre` (faltante no aleatorio que cuesta el 79 % de las filas perdidas), de `Estado_Civil` (baja validez del registro), de `Hijos_fallec_madre` (código `-1` ambiguo), de `Hijos_vivo_madre` (redundante con el número de embarazos) y de `DESC_OCUPACION` (texto libre).
    - Agrupación de categorías poco frecuentes y construcción de `departamento` y `pais_grupo`.
-   - **Partición temporal:** entrenamiento y validación con 2015–2023 (80 % / 20 % al azar, estratificado) y test con 2024–2025, que se usa una sola vez al final. El preprocesador se ajusta solo con el entrenamiento y el umbral de decisión se calibra en validación. El corte del CNV es el 30/11/2025, así que 2025 no incluye diciembre. El split aleatorio 80/20 queda como referencia secundaria.
+   - One-hot para las 7 variables categóricas y estandarización para las 2 numéricas (53 columnas), ajustado solo con el entrenamiento.
+   - **Partición temporal:** entrenamiento y validación con 2015–2023 (80 % / 20 % al azar, estratificado) y test con 2024–2025, que se usa una sola vez al final. El corte del CNV es el 30/11/2025, así que 2025 no incluye diciembre.
 3. **Datos procesados** (`data/processed/cnv_limpio.csv.gz`): resultado de la limpieza, con 4 871 486 registros (los que tienen peso válido).
-4. **Baseline** (`notebooks/02_modelos.ipynb`): regresión logística con y sin balanceo de clases, siguiendo el diseño de Almeida et al. (2026), evaluada con precisión, recall, F1-score, AUC-ROC y AUC-PR sobre el test temporal. Como la prevalencia de bajo peso cambia entre train/validación (6.32 %) y test (6.81 %), las métricas dependientes de la prevalencia no son comparables con las de un split aleatorio.
+4. **Modelos** (`notebooks/02_baseline.ipynb` a `notebooks/06_xgboost.ipynb`): un notebook por modelo, todos con el mismo protocolo:
+   - Hiperparámetros del modelo ajustados con una grilla evaluada por **AUC-PR en validación**.
+   - **Umbral de decisión fijo en 0.5**, sin calibrar, como en los papers de referencia.
+   - Evaluación única en el test 2024–2025 con accuracy, precisión, recall, F1-score, AUC-ROC y AUC-PR.
+5. **Comparación** (`results/`): tabla de métricas, gráficos y análisis de qué modelo funcionó mejor, por qué, limitaciones e insights.
 
-## Propuesta de modelos
+## Modelos
 
 ### Mejores modelos reportados en la literatura revisada
 
@@ -43,58 +48,85 @@ Certificados de Nacido Vivo del MINSA (Plataforma Nacional de Datos Abiertos), c
 | Liu et al. (2022) | Estimación del peso al nacer | Ensamble de votación y SVR, por delante de la regresión lineal, random forest, AdaBoost y gradient boosting |
 | Ranjbar et al. (2023) | Clasificación de bajo peso | XGBoost como mejor modelo global; la red feedforward, random forest y XGBoost obtuvieron los mayores AUROC entre ocho modelos |
 
-### Modelos seleccionados
+### Modelos implementados
 
-| Modelo | Justificación |
-|---|---|
-| **Regresión logística** | Mejor clasificador en Almeida et al. (2026) y en Khan et al. (2022). Es el baseline, ya implementado en `notebooks/02_modelos.ipynb`. |
-| **Random forest** | Único modelo presente en los cuatro papers: mejor modelo para estimar el peso en Khan et al. (2022), entre los tres con mayor AUROC en Ranjbar et al. (2023) y modelo de comparación en Almeida et al. (2026). |
-| **XGBoost** | Mejor modelo para predecir el bajo peso según Ranjbar et al. (2023), considerando accuracy, precisión, recall y F1-score. |
+| Notebook | Modelo | Justificación |
+|---|---|---|
+| `02_baseline.ipynb` | Regresión logística simple (baseline) | Punto de referencia sin tratamiento del desbalance; modelo sin balancear de Almeida et al. (2026). |
+| `03_rl_balanceada.ipynb` | Regresión logística balanceada (`class_weight="balanced"`) | Mejor clasificador en Almeida et al. (2026). |
+| `04_rl_smote.ipynb` | Regresión logística con sobremuestreo SMOTE-NC | Mejor clasificador en Khan et al. (2022); se usa SMOTE-NC porque casi todas las variables son categóricas. |
+| `05_random_forest.ipynb` | Random forest balanceado | Único modelo presente en los cuatro papers: mejor modelo para estimar el peso en Khan et al. (2022), entre los tres con mayor AUROC en Ranjbar et al. (2023) y modelo de comparación en Almeida et al. (2026). |
+| `06_xgboost.ipynb` | XGBoost *(en desarrollo)* | Mejor modelo para predecir el bajo peso según Ranjbar et al. (2023). |
 
-Los tres modelos se entrenarán con y sin balanceo de clases y se evaluarán sobre el mismo test temporal (2024–2025) y con las mismas métricas que el baseline.
+## Resultados
+
+Resultados provisionales en el test 2024–2025 (717 673 nacimientos, 6.81 % con bajo peso), con umbral 0.5:
+
+| Modelo | Accuracy | Recall | F1 | Precisión | AUC-ROC | AUC-PR |
+|---|---|---|---|---|---|---|
+| Baseline: regresión logística simple | 0.957 | 0.473 | 0.600 | 0.820 | 0.908 | 0.677 |
+| Regresión logística balanceada | 0.865 | 0.809 | 0.449 | 0.310 | 0.908 | 0.677 |
+| Regresión logística con SMOTE-NC | 0.948 | 0.630 | 0.624 | 0.618 | 0.907 | 0.677 |
+| Random forest balanceado | 0.880 | 0.793 | 0.475 | 0.339 | 0.911 | 0.679 |
+| XGBoost | *pendiente* | | | | | |
+
+Con cuatro de los cinco modelos evaluados, el random forest balanceado es el de mejor capacidad de discriminación y detecta el 79 % de los casos de bajo peso. El resumen completo y el análisis detallado están en [`results/model_comparison.md`](proyecto/results/model_comparison.md).
 
 ## Estructura del repositorio
 
+La estructura propuesta en las indicaciones del curso es opcional; las adaptaciones se explican en `ENTREGABLE_FINAL.md`.
+
 ```
-proyecto/
+AI_Project/
 ├── README.md
 ├── ENTREGABLE_PARCIAL.md
-├── data/
-│   ├── raw/
-│   │   ├── dataset.zip                  # dataset original del CNV
-│   │   └── Información del dataset.md   # origen, variables y permisos
-│   └── processed/
-│       └── cnv_limpio.csv.gz            # dataset limpio generado con src/preprocessing.py
-├── notebooks/
-│   ├── 01_eda.ipynb                     # análisis exploratorio
-│   └── 02_modelos.ipynb                 # baseline
-├── src/
-│   └── preprocessing.py                 # carga, limpieza y selección de features
-├── results/
-│   └── README.md                        # descripción de los resultados del entregable final
-└── papers/
-    ├── paper_Jair_Aguilera.pdf
-    ├── paper_luis_araujo.pdf
-    ├── paper_Nilton_Condori.pdf
-    └── paper_Pedro_Vilcayauri.pdf
+├── ENTREGABLE_FINAL.md
+└── proyecto/
+    ├── data/
+    │   ├── raw/
+    │   │   ├── dataset.zip                  # dataset original del CNV
+    │   │   └── Información del dataset.md   # origen, variables y permisos
+    │   └── processed/
+    │       └── cnv_limpio.csv.gz            # dataset limpio generado con src/preprocessing.py
+    ├── notebooks/
+    │   ├── 01_eda.ipynb                     # análisis exploratorio
+    │   ├── 02_baseline.ipynb                # regresión logística simple
+    │   ├── 03_rl_balanceada.ipynb           # regresión logística balanceada
+    │   ├── 04_rl_smote.ipynb                # regresión logística con SMOTE-NC
+    │   ├── 05_random_forest.ipynb           # random forest balanceado
+    │   └── 06_xgboost.ipynb                 # XGBoost (en desarrollo)
+    ├── src/
+    │   └── preprocessing.py                 # carga, limpieza, features, partición y preprocesador
+    ├── results/
+    │   ├── model_comparison.md              # resumen de resultados y análisis detallado
+    │   ├── metrics.csv                      # tabla comparativa de métricas en test
+    │   └── plots/                           # gráficos comparativos y de cada modelo
+    └── papers/
+        ├── paper_Jair_Aguilera.pdf
+        ├── paper_luis_araujo.pdf
+        ├── paper_Nilton_Condori.pdf
+        └── paper_Pedro_Vilcayauri.pdf
 ```
 
 ## Cómo ejecutar
 
-Los notebooks están preparados para **Google Colab**. Se abren directamente desde estos enlaces (se requiere una cuenta de Google):
+Los notebooks están preparados para **Google Colab** y ya están guardados con sus resultados, así que se pueden revisar sin ejecutarlos. Se abren directamente desde estos enlaces (se requiere una cuenta de Google):
 
-- [`01_eda.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/01_eda.ipynb): análisis exploratorio.
-- [`02_modelos.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/02_modelos.ipynb): baseline.
+| Notebook | Contenido | Tiempo aproximado en Colab |
+|---|---|---|
+| [`01_eda.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/01_eda.ipynb) | Análisis exploratorio | Pocos minutos |
+| [`02_baseline.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/02_baseline.ipynb) | Regresión logística simple | Pocos minutos |
+| [`03_rl_balanceada.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/03_rl_balanceada.ipynb) | Regresión logística balanceada | ≈ 15 min |
+| [`04_rl_smote.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/04_rl_smote.ipynb) | Regresión logística con SMOTE-NC | ≈ 1 h |
+| [`05_random_forest.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/05_random_forest.ipynb) | Random forest balanceado | ≈ 40 min |
 
-Con el notebook abierto, ejecutar todas las celdas desde **Entorno de ejecución → Ejecutar todas**. La primera celda descarga automáticamente el repositorio en la sesión de Colab, así que no es necesario subir ningún archivo. Se recomienda ejecutar primero `01_eda.ipynb` y luego `02_modelos.ipynb`.
+Con el notebook abierto, ejecutar todas las celdas desde **Entorno de ejecución → Ejecutar todas**, con el entorno estándar de CPU. La primera celda descarga automáticamente el repositorio en la sesión de Colab e instala `imbalanced-learn` si falta, así que no es necesario subir ningún archivo. Cada notebook es independiente: carga el dataset original y aplica el mismo preprocesamiento, así que se pueden ejecutar en cualquier orden. En los notebooks largos conviene mantener la pestaña abierta hasta que terminen.
 
 Si los enlaces no funcionan, también se pueden abrir manualmente:
 
 1. Entrar a [Google Colab](https://colab.research.google.com/) y crear un cuaderno con **Nuevo cuaderno**.
 2. En el menú superior del cuaderno, ir a **Archivo → Abrir cuaderno** y elegir **GitHub** en el panel izquierdo.
 3. Pegar `https://github.com/jasnai10/AI_Project` en el campo de búsqueda, verificar que la rama sea `main` y hacer clic en el notebook en la lista **Ruta**.
-
-Para regenerar `data/processed/cnv_limpio.csv.gz`, cambiar `GUARDAR_PROCESADO = True` en la primera celda de código de `02_modelos.ipynb` antes de ejecutarlo.
 
 ## Referencias
 
