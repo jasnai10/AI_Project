@@ -23,9 +23,6 @@ Todos los modelos se entrenaron con los nacimientos de 2015–2023 y se evaluaro
 | Regresión logística con SMOTE-NC | 0.948 | 0.630 | **0.624** | 0.618 | 0.907 | 0.677 |
 | Random Forest balanceado | 0.880 | 0.793 | 0.475 | 0.339 | **0.911** | **0.679** |
 | XGBoost | *pendiente* | | | | | |
-| *Clasificador al azar* | — | — | — | *0.068* | *0.500* | *0.068* |
-
-![Métricas de los modelos en test](plots/comparacion_metricas.png)
 
 **Modelo con mejor desempeño hasta ahora: Random Forest balanceado** (a reserva de XGBoost).
 
@@ -33,6 +30,10 @@ Todos los modelos se entrenaron con los nacimientos de 2015–2023 y se evaluaro
 - Detecta el 79 % de los recién nacidos con bajo peso (38 800 de 48 907). Una de cada tres alertas es un caso real, cinco veces más que al azar.
 - Todos los modelos discriminan de forma parecida: el AUC-PR es unas 10 veces el del azar en todos. Lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas alarmas.
 - Balancear las clases (por pesos o con SMOTE-NC) sube el recall a costa de la precisión, sin mejorar la discriminación.
+
+![Punto de operación de cada modelo](plots/comparacion_recall_precision.png)
+
+En el gráfico, cada punto es un modelo con el umbral 0.5 y las líneas grises unen los puntos con el mismo F1.
 
 ---
 
@@ -104,50 +105,26 @@ La accuracy no se usa como criterio: con 6.8 % de prevalencia, predecir siempre 
 - En su grilla, `max_features` fue el hiperparámetro más influyente: con `"sqrt"` (3 de 9 variables por división) el rendimiento fue claramente peor que con 0.5. Las hojas de 10 registros mostraron sobreajuste; las de 50 dieron el mejor equilibrio.
 - La mejora es pequeña y tiene un costo: el Random Forest tarda mucho más en entrenar que la regresión logística balanceada y es menos interpretable.
 
-### 2.6 El balanceo cambia el punto de operación, no la discriminación
-
-La regresión logística balanceada y la de SMOTE-NC tienen el mismo AUC-PR que el baseline; lo que cambia es cuántos casos marcan con el umbral 0.5:
-
-- El baseline marca pocos: recall 0.47 y precisión 0.82. Pierde más de la mitad de los casos.
-- La balanceada marca muchos: recall 0.81 y precisión 0.31.
-- SMOTE-NC con proporción 0.25 queda en el medio: recall 0.63, precisión 0.62 y el mejor F1.
-
-![Punto de operación de cada modelo](plots/comparacion_recall_precision.png)
-
-En el gráfico, las líneas grises unen los puntos con el mismo F1. El Random Forest queda ligeramente por encima de la RL balanceada: con casi el mismo recall, tiene algo más de precisión.
-
-Es el mismo patrón que reporta Almeida et al. (2026): balancear sube el recall y baja la precisión, con el AUC-ROC prácticamente igual.
-
-### 2.7 SMOTE-NC no mejora la discriminación
+### 2.6 SMOTE-NC no mejora la discriminación
 
 A diferencia de Khan et al. (2022), que trabajó con 89 casos de bajo peso, aquí hay más de 200 000 casos reales en train; los casos sintéticos no aportan información nueva. Además, fue el modelo más costoso de entrenar (≈ 1 hora en Colab), cuando `class_weight="balanced"` logra el mismo efecto en minutos.
 
-### 2.8 Calibración
+### 2.7 Calibración
 
 Solo el baseline produce probabilidades bien calibradas. Los modelos balanceados (RL balanceada, SMOTE-NC y Random Forest) sobreestiman el riesgo: en el decil de mayor riesgo predicen entre 0.68 y 0.88, cuando la proporción observada es cercana a 0.48. Para usar sus probabilidades como riesgo absoluto habría que recalibrarlas.
 
-### 2.9 Estabilidad en el tiempo
+### 2.8 Estabilidad en el tiempo
 
 El desempeño se mantiene entre validación (2015–2023) y test (2024–2025): el AUC-ROC del baseline pasa de 0.904 a 0.908. Los modelos entrenados con el pasado generalizan a los años siguientes.
 
-### 2.10 Comparación con la literatura
-
-| Estudio | Mejor modelo | AUC-ROC | Recall | Prevalencia |
-|---|---|---|---|---|
-| Almeida et al. (2026) | RL balanceada | 0.85 | 0.688 | 9.5 % |
-| Ranjbar et al. (2023) | XGBoost | 0.79 | 0.69 | 14.5 % |
-| Este trabajo (provisional) | Random Forest balanceado | 0.911 | 0.793 | 6.8 % |
-
-Las cifras no son directamente comparables (otros países, variables, prevalencias y particiones), pero el desempeño está en el rango de la literatura. A diferencia de Almeida, donde el random forest rindió peor que la regresión logística (AUC-ROC 0.78–0.81 frente a 0.85), aquí queda a su nivel o levemente por encima.
-
-### 2.11 Insights
+### 2.9 Insights
 
 - **El límite está en la información de las variables, no en el modelo.** Cinco enfoques distintos llegan prácticamente al mismo AUC-PR; para mejorar de forma clara harían falta variables clínicas que el CNV no registra.
 - **Elegir el modelo es también elegir un punto de operación.** Si la prioridad es no perder casos, conviene un modelo balanceado (recall ≈ 0.8, con unas 2 falsas alarmas por caso detectado); si importa más no saturar los servicios, SMOTE-NC o el baseline. Esa decisión depende del costo de perder un caso frente al de una falsa alarma.
 - **Con millones de registros, la solución más simple al desbalance basta.** `class_weight="balanced"` da el mismo resultado que SMOTE-NC a una fracción del costo.
 - **La accuracy engaña en este problema:** el baseline tiene la mejor accuracy (0.957) y es el que más casos pierde.
 
-### 2.12 Limitaciones
+### 2.10 Limitaciones
 
 - **`DUR_EMB_PARTO` se conoce en el momento del parto.** Los modelos sirven para anticipar, antes del pesaje, qué recién nacidos pueden necesitar atención especial; no son una predicción prenatal.
 - **Umbral fijo en 0.5**, como en los papers de referencia; precisión, recall y F1 dependen de esa elección.
@@ -162,11 +139,10 @@ Las cifras no son directamente comparables (otros países, variables, prevalenci
 
 ## 3. Gráficos
 
-Todos están en `results/plots/`. Los comparativos se generaron a partir de `metrics.csv`; los de cada modelo se extrajeron de su notebook ejecutado en Colab. Todos usan el test, salvo las gráficas de grilla, que muestran la selección de hiperparámetros en validación.
+Todos están en `results/plots/`. El comparativo se generó a partir de `metrics.csv`; los de cada modelo se extrajeron de su notebook ejecutado en Colab. Todos usan el test, salvo las gráficas de grilla, que muestran la selección de hiperparámetros en validación.
 
 | Archivo | Contenido |
 |---|---|
-| `comparacion_metricas.png` | Las 6 métricas de los 4 modelos en test |
 | `comparacion_recall_precision.png` | Punto de operación (recall frente a precisión) de cada modelo, con líneas de igual F1 |
 | `02_baseline_curvas_test.png` | Baseline: curvas ROC, precisión-recall y de calibración en test |
 | `03_rl_balanceada_grilla_validacion.png` | RL balanceada: AUC-PR en train y validación de la grilla |
