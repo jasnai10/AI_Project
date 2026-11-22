@@ -32,7 +32,7 @@ La profesora indicó que la estructura propuesta en las indicaciones del curso e
 - [ ] `notebooks/06_xgboost.ipynb`: XGBoost (Ranjbar et al., 2023).
 - [x] Notebooks ejecutados en Google Colab sin errores y con sus resultados guardados (01 a 05).
 - [x] Tabla comparativa con las 6 métricas en test en `results/metrics.csv` y en `results/model_comparison.md` (provisional, sin XGBoost).
-- [x] Gráficos comparativos y de cada modelo en `results/plots/` (provisional, sin XGBoost).
+- [x] Gráficos de cada modelo en `results/plots/` (provisional, sin XGBoost).
 - [x] Análisis de qué modelo funcionó mejor, por qué, limitaciones e insights en `results/model_comparison.md` (provisional).
 - [x] `README.md` actualizado: metodología con umbral fijo en 0.5, modelos implementados, resultados provisionales, estructura del repositorio y enlaces de Colab de cada notebook.
 - [ ] Actualizar `results/metrics.csv`, `results/plots/`, `results/model_comparison.md` y `README.md` con XGBoost y la conclusión final.

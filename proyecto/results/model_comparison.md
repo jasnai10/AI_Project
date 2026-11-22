@@ -31,10 +31,6 @@ Todos los modelos se entrenaron con los nacimientos de 2015–2023 y se evaluaro
 - Todos los modelos discriminan de forma parecida: el AUC-PR es unas 10 veces el del azar en todos. Lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas alarmas.
 - Balancear las clases (por pesos o con SMOTE-NC) sube el recall a costa de la precisión, sin mejorar la discriminación.
 
-![Punto de operación de cada modelo](plots/comparacion_recall_precision.png)
-
-En el gráfico, cada punto es un modelo con el umbral 0.5 y las líneas grises unen los puntos con el mismo F1.
-
 ---
 
 ## 2. Análisis detallado
@@ -139,11 +135,10 @@ El desempeño se mantiene entre validación (2015–2023) y test (2024–2025): 
 
 ## 3. Gráficos
 
-Todos están en `results/plots/`. El comparativo se generó a partir de `metrics.csv`; los de cada modelo se extrajeron de su notebook ejecutado en Colab. Todos usan el test, salvo las gráficas de grilla, que muestran la selección de hiperparámetros en validación.
+Todos están en `results/plots/` y se extrajeron del notebook de cada modelo ejecutado en Colab. Todos usan el test, salvo las gráficas de grilla, que muestran la selección de hiperparámetros en validación.
 
 | Archivo | Contenido |
 |---|---|
-| `comparacion_recall_precision.png` | Punto de operación (recall frente a precisión) de cada modelo, con líneas de igual F1 |
 | `02_baseline_curvas_test.png` | Baseline: curvas ROC, precisión-recall y de calibración en test |
 | `03_rl_balanceada_grilla_validacion.png` | RL balanceada: AUC-PR en train y validación de la grilla |
 | `03_rl_balanceada_curvas_test.png` | RL balanceada frente al baseline: curvas ROC, precisión-recall y de calibración en test |
@@ -157,4 +152,4 @@ Todos están en `results/plots/`. El comparativo se generó a partir de `metrics
 ## 4. Pendiente
 
 - [ ] `06_xgboost.ipynb`: implementar, ajustar y evaluar con el mismo protocolo.
-- [ ] Actualizar el resumen, las tablas, `metrics.csv`, los gráficos comparativos, el modelo final y el análisis con los resultados de XGBoost.
+- [ ] Actualizar el resumen, las tablas, `metrics.csv`, los gráficos, el modelo final y el análisis con los resultados de XGBoost.

@@ -100,7 +100,7 @@ AI_Project/
     ├── results/
     │   ├── model_comparison.md              # resumen de resultados y análisis detallado
     │   ├── metrics.csv                      # tabla comparativa de métricas en test
-    │   └── plots/                           # gráficos comparativos y de cada modelo
+    │   └── plots/                           # gráficos de cada modelo
     └── papers/
         ├── paper_Jair_Aguilera.pdf
         ├── paper_luis_araujo.pdf
