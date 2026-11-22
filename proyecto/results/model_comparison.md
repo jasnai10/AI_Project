@@ -2,6 +2,12 @@
 
 Predicción de bajo peso al nacer (< 2500 g) con el registro de Certificados de Nacido Vivo (CNV) del MINSA.
 
+Archivos de esta carpeta:
+
+- `model_comparison.md` (este archivo): resumen de resultados y análisis detallado.
+- [`metrics.csv`](metrics.csv): tabla comparativa con las métricas en test, la matriz de confusión, el AUC-PR de validación y los hiperparámetros elegidos de cada modelo.
+- [`plots/`](plots/): gráficos comparativos y gráficos de cada modelo (sección 3).
+
 > **Estado:** resultados de 4 de los 5 modelos. Falta **XGBoost** (`06_xgboost.ipynb`); las tablas y la conclusión se actualizarán cuando esté listo.
 
 ---
@@ -18,6 +24,8 @@ Todos los modelos se entrenaron con los nacimientos de 2015–2023 y se evaluaro
 | Random Forest balanceado | 0.880 | 0.793 | 0.475 | 0.339 | **0.911** | **0.679** |
 | XGBoost | *pendiente* | | | | | |
 | *Clasificador al azar* | — | — | — | *0.068* | *0.500* | *0.068* |
+
+![Métricas de los modelos en test](plots/comparacion_metricas.png)
 
 **Modelo con mejor desempeño hasta ahora: Random Forest balanceado** (a reserva de XGBoost).
 
@@ -64,6 +72,8 @@ Todos los modelos usan exactamente los mismos datos, la misma partición y las m
 | RL SMOTE-NC | 30 790 | 18 117 | 19 006 | 0.6 |
 | Random Forest balanceado | 38 800 | 10 107 | 75 828 | 2.0 |
 
+![Casos detectados y falsas alarmas en test](plots/comparacion_confusion.png)
+
 ### 2.3 Hiperparámetros elegidos
 
 Todos se eligieron por AUC-PR en validación. Solo se ajustaron hiperparámetros del modelo; los parámetros del algoritmo (solver, paralelismo, semilla) quedaron fijos.
@@ -74,6 +84,8 @@ Todos se eligieron por AUC-PR en validación. Solo se ajustaron hiperparámetros
 | RL balanceada | `C` ∈ {1e-5, 1e-4, 1e-3, 0.01, 0.1, 1} × penalización {L2, L1} (12) | `class_weight="balanced"`, `saga` | L2, `C=0.0001` | 0.6655 |
 | RL SMOTE-NC | proporción de sobremuestreo {0.25, 0.5} × `C` {1e-4, 1e-3} × penalización {L2, L1} (8) | `k_neighbors=5`, sin `class_weight`, `saga` | proporción 0.25, L2, `C=0.0001` | 0.6659 |
 | Random Forest balanceado | `min_samples_leaf` {10, 50, 200} × `max_features` {`"sqrt"`, 0.5} × `max_samples` {0.1, 0.3} (12) | `class_weight="balanced"`, 50 árboles, `max_depth=None` | hojas de 50, `max_features=0.5`, `max_samples=0.3` | **0.6697** |
+
+Las curvas de AUC-PR en train y validación de cada grilla están en `plots/` (sección 3).
 
 **Tiempo de ejecución en Colab:** baseline ≈ 13 s de ajuste; RL balanceada ≈ 12 min de grilla; RL SMOTE-NC ≈ 39 min de sobremuestreo + 21 min de grilla; Random Forest ≈ 35 min de grilla.
 
@@ -101,6 +113,10 @@ La regresión logística balanceada y la de SMOTE-NC tienen el mismo AUC-PR que 
 - El baseline marca pocos: recall 0.47 y precisión 0.82. Pierde más de la mitad de los casos.
 - La balanceada marca muchos: recall 0.81 y precisión 0.31.
 - SMOTE-NC con proporción 0.25 queda en el medio: recall 0.63, precisión 0.62 y el mejor F1.
+
+![Punto de operación de cada modelo](plots/comparacion_recall_precision.png)
+
+En el gráfico, las líneas grises unen los puntos con el mismo F1. El Random Forest queda ligeramente por encima de la RL balanceada: con casi el mismo recall, tiene algo más de precisión.
 
 Es el mismo patrón que reporta Almeida et al. (2026): balancear sube el recall y baja la precisión, con el AUC-ROC prácticamente igual.
 
@@ -146,7 +162,26 @@ Las cifras no son directamente comparables (otros países, variables, prevalenci
 
 ---
 
-## 3. Pendiente
+## 3. Gráficos
+
+Todos están en `results/plots/`. Los comparativos se generaron a partir de `metrics.csv`; los de cada modelo se extrajeron de su notebook ejecutado en Colab.
+
+| Archivo | Contenido |
+|---|---|
+| `comparacion_metricas.png` | Las 6 métricas de los 4 modelos en test |
+| `comparacion_recall_precision.png` | Punto de operación (recall frente a precisión) de cada modelo, con líneas de igual F1 |
+| `comparacion_confusion.png` | Casos detectados, casos perdidos y falsas alarmas de cada modelo |
+| `02_baseline_curvas_test.png` | Baseline: curvas ROC, precisión-recall y de calibración en test |
+| `03_rl_balanceada_grilla_validacion.png` | RL balanceada: AUC-PR en train y validación de la grilla |
+| `03_rl_balanceada_curvas_test.png` | RL balanceada frente al baseline: curvas ROC, precisión-recall y de calibración en test |
+| `04_rl_smote_grilla_validacion.png` | RL SMOTE-NC: AUC-PR en train y validación de la grilla |
+| `04_rl_smote_curvas_test.png` | RL SMOTE-NC frente al baseline: curvas ROC, precisión-recall y de calibración en test |
+| `05_random_forest_grilla_validacion.png` | Random Forest: AUC-PR en train y validación de la grilla |
+| `05_random_forest_curvas_test.png` | Random Forest frente al baseline: curvas ROC, precisión-recall y de calibración en test |
+
+---
+
+## 4. Pendiente
 
 - [ ] `06_xgboost.ipynb`: implementar, ajustar y evaluar con el mismo protocolo.
-- [ ] Actualizar el resumen, las tablas, el modelo final y el análisis con los resultados de XGBoost.
+- [ ] Actualizar el resumen, las tablas, `metrics.csv`, los gráficos comparativos, el modelo final y el análisis con los resultados de XGBoost.

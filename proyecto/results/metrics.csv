@@ -1,0 +1,5 @@
+modelo,accuracy,recall,f1,precision,auc_roc,auc_pr,vp,fn,fp,vn,auc_pr_validacion,hiperparametros
+Baseline: RL simple,0.957,0.4732,0.6002,0.8204,0.9081,0.6774,23144,25763,5067,663699,0.6666,C=1; L2; lbfgs; sin balanceo
+RL balanceada,0.8645,0.8086,0.4485,0.3103,0.9081,0.6769,39548,9359,87893,580873,0.6655,C=0.0001; L2; saga; class_weight=balanced
+RL SMOTE-NC,0.9483,0.6296,0.6239,0.6183,0.9071,0.677,30790,18117,19006,649760,0.6659,sampling_strategy=0.25; k_neighbors=5; C=0.0001; L2; saga
+Random Forest balanceado,0.8803,0.7933,0.4745,0.3385,0.9107,0.6788,38800,10107,75828,592938,0.6697,n_estimators=50; min_samples_leaf=50; max_features=0.5; max_samples=0.3; class_weight=balanced
