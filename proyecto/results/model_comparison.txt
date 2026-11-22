@@ -1,21 +1,6 @@
 COMPARACIÓN DE MODELOS
 ======================
 
-Predicción de bajo peso al nacer (< 2500 g) con el registro de Certificados de Nacido Vivo
-(CNV) del MINSA.
-
-Archivos de esta carpeta:
-
-- model_comparison.txt (este archivo): resumen de resultados y análisis detallado.
-- metrics.csv: tabla comparativa con las 6 métricas de cada modelo en el test (2024-2025).
-- plots/: gráficos de cada modelo (sección 3).
-
-ESTADO: resultados de 4 de los 5 modelos. Falta XGBoost (06_xgboost.ipynb); las tablas y la
-conclusión se actualizarán cuando esté listo.
-
-
-###############################################################################################
-
 1. RESUMEN DE RESULTADOS
 ========================
 
