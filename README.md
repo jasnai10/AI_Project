@@ -70,7 +70,7 @@ Resultados provisionales en el test 2024–2025 (717 673 nacimientos, 6.81 % con
 | Random forest balanceado | 0.880 | 0.793 | 0.475 | 0.339 | 0.911 | 0.679 |
 | XGBoost | *pendiente* | | | | | |
 
-Con cuatro de los cinco modelos evaluados, el random forest balanceado es el de mejor capacidad de discriminación y detecta el 79 % de los casos de bajo peso. El resumen completo y el análisis detallado están en [`results/model_comparison.md`](proyecto/results/model_comparison.md).
+Con cuatro de los cinco modelos evaluados, el random forest balanceado es el de mejor capacidad de discriminación y detecta el 79 % de los casos de bajo peso. El resumen completo y el análisis detallado están en [`results/model_comparison.txt`](proyecto/results/model_comparison.txt).
 
 ## Estructura del repositorio
 
@@ -98,7 +98,7 @@ AI_Project/
     ├── src/
     │   └── preprocessing.py                 # carga, limpieza, features, partición y preprocesador
     ├── results/
-    │   ├── model_comparison.md              # resumen de resultados y análisis detallado
+    │   ├── model_comparison.txt             # resumen de resultados y análisis detallado
     │   ├── metrics.csv                      # tabla comparativa de métricas en test
     │   └── plots/                           # gráficos de cada modelo
     └── papers/
