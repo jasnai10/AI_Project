@@ -224,27 +224,7 @@ siguientes.
 
 ###############################################################################################
 
-3. GRÁFICOS
-===========
-
-Todos están en results/plots/ y se extrajeron del notebook de cada modelo ejecutado en Colab.
-Todos usan el test, salvo las gráficas de grilla, que muestran la selección de hiperparámetros
-en validación.
-
-Archivo                                 Contenido
---------------------------------------  -------------------------------------------------------------------------
-02_baseline_curvas_test.png             Baseline: curvas ROC, precisión-recall y de calibración en test
-03_rl_balanceada_grilla_validacion.png  RL balanceada: AUC-PR en train y validación de la grilla
-03_rl_balanceada_curvas_test.png        RL balanceada frente al baseline: curvas ROC, PR y de calibración en test
-04_rl_smote_grilla_validacion.png       RL SMOTE-NC: AUC-PR en train y validación de la grilla
-04_rl_smote_curvas_test.png             RL SMOTE-NC frente al baseline: curvas ROC, PR y de calibración en test
-05_random_forest_grilla_validacion.png  Random Forest: AUC-PR en train y validación de la grilla
-05_random_forest_curvas_test.png        Random Forest frente al baseline: curvas ROC, PR y de calibración en test
-
-
-###############################################################################################
-
-4. PENDIENTE
+3. PENDIENTE
 ============
 
 [ ] 06_xgboost.ipynb: implementar, ajustar y evaluar con el mismo protocolo.
