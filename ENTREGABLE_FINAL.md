@@ -6,7 +6,7 @@
 
 A partir del análisis exploratorio se definió un único conjunto de 9 variables y una partición temporal: los modelos se entrenan con los nacimientos de 2015–2023 y se evalúan con los de 2024–2025, que simulan su uso en años futuros. Sobre esa base se implementaron cinco modelos propuestos en la literatura revisada, cada uno en su propio notebook y con el mismo protocolo: hiperparámetros ajustados por AUC-PR en validación, umbral de decisión de 0.5 (como en los papers de referencia) y evaluación única en el test con accuracy, precisión, recall, F1, AUC-ROC y AUC-PR. La comparación de resultados y el análisis están en `results/model_comparison.txt`.
 
-De los cinco modelos, XGBoost balanceado es el de mejor capacidad de discriminación (AUC-ROC 0.913, AUC-PR 0.682) y detecta el 80 % de los casos de bajo peso en el test. Su ventaja sobre el baseline es pequeña (0.005 en AUC-ROC y 0.004 en AUC-PR): los cinco modelos discriminan de forma parecida, y la duración del embarazo concentra casi toda la información.
+De los cinco modelos, XGBoost balanceado es el de mejor capacidad de discriminación (AUC-ROC 0.913, AUC-PR 0.682) y detecta el 80 % de los casos de bajo peso en el test. Su ventaja sobre el baseline es pequeña (0.005 en AUC-ROC y 0.004 en AUC-PR): los cinco modelos discriminan de forma parecida, y lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas alarmas.
 
 ## Organización del repositorio
 
@@ -35,6 +35,6 @@ La profesora indicó que la estructura propuesta en las indicaciones del curso e
 - [x] Análisis de qué modelo funcionó mejor, por qué, limitaciones e insights en `results/model_comparison.txt`.
 - [x] `README.md` actualizado: metodología con umbral fijo en 0.5, modelos implementados, resultados, estructura del repositorio y enlaces de Colab de cada notebook.
 - [x] Actualizar `results/metrics.csv`, `results/plots/`, `results/model_comparison.txt` y `README.md` con XGBoost y la conclusión final.
-- [x] Reporte académico de 5 páginas en `proyecto/report.pdf` (fuente editable y scripts de las figuras en `proyecto/report_src/`).
+- [x] Reporte académico de 5 páginas en `proyecto/report.pdf`, con la declaración de uso de IA y la contribución de cada integrante.
 - [ ] Presentación en clase (máximo 5 minutos, enfocada en resultados y conclusiones).
 - [ ] `ENTREGABLE_FINAL.md` confirmando la completitud del entregable.

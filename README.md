@@ -70,7 +70,7 @@ Resultados en el test 2024–2025 (717 673 nacimientos, 6.81 % con bajo peso), c
 | Random forest balanceado | 0.880 | 0.793 | 0.475 | 0.339 | 0.911 | 0.679 |
 | XGBoost balanceado | 0.873 | 0.803 | 0.462 | 0.325 | **0.913** | **0.682** |
 
-**XGBoost balanceado es el modelo con mejor capacidad de discriminación** (AUC-ROC 0.913 y AUC-PR 0.682, los más altos de los cinco) y detecta el 80 % de los casos de bajo peso. Su ventaja es pequeña: 0.005 en AUC-ROC y 0.004 en AUC-PR sobre el baseline. Los cinco modelos discriminan de forma parecida, y lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas alarmas. En XGBoost, la duración del embarazo concentra el 91 % de la importancia de las variables. El resumen completo y el análisis detallado están en [`results/model_comparison.txt`](proyecto/results/model_comparison.txt), y el reporte académico, en [`report.pdf`](proyecto/report.pdf).
+**XGBoost balanceado es el modelo con mejor capacidad de discriminación** (AUC-ROC 0.913 y AUC-PR 0.682, los más altos de los cinco) y detecta el 80 % de los casos de bajo peso. Su ventaja es pequeña: 0.005 en AUC-ROC y 0.004 en AUC-PR sobre el baseline. Los cinco modelos discriminan de forma parecida, y lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas alarmas. El resumen completo y el análisis detallado están en [`results/model_comparison.txt`](proyecto/results/model_comparison.txt), y el reporte académico, en [`report.pdf`](proyecto/report.pdf).
 
 ## Estructura del repositorio
 
@@ -106,8 +106,7 @@ AI_Project/
     │   ├── paper_luis_araujo.pdf
     │   ├── paper_Nilton_Condori.pdf
     │   └── paper_Pedro_Vilcayauri.pdf
-    ├── report.pdf                           # reporte académico (paper de 5 páginas)
-    └── report_src/                          # fuente del reporte: HTML y scripts de sus dos figuras
+    └── report.pdf                           # reporte académico (paper de 5 páginas)
 ```
 
 ## Cómo ejecutar

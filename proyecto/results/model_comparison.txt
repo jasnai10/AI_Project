@@ -130,8 +130,7 @@ XGBoost balanceado
                      desempate: menor max_depth, mayor min_child_weight y, entre la versión
                      con y sin balanceo, la de mayor recall.
 
-Las curvas de AUC-PR en train y validación de cada grilla están en plots/ (sección 3), junto
-con la importancia de las variables de XGBoost.
+Las curvas de AUC-PR en train y validación de cada grilla están en plots/ (sección 3).
 
 Tiempo de ejecución en Colab: baseline ≈ 13 s de ajuste; RL balanceada ≈ 12 min de grilla; RL
 SMOTE-NC ≈ 39 min de sobremuestreo + 21 min de grilla; Random Forest ≈ 35 min de grilla.
@@ -214,35 +213,11 @@ El desempeño se mantiene entre validación (2015-2023) y test (2024-2025): el A
 baseline pasa de 0.904 a 0.908, y el de XGBoost de 0.909 a 0.913. Los modelos entrenados con
 el pasado generalizan a los años siguientes.
 
-2.9 Variables más importantes
------------------------------
-
-Importancia por ganancia de XGBoost: cuánto reduce cada variable la pérdida en train, sumando
-las columnas del one-hot de cada variable original.
-
-Variable           % de la ganancia
------------------  ----------------
-DUR_EMB_PARTO      90.83
-Tipo_Parto          2.83
-departamento        1.98
-Financiador_Parto   1.52
-Num_embar_madre     1.02
-Nivel_Instruccion   0.79
-sexo_nacido         0.65
-edad_grupo          0.27
-pais_grupo          0.11
-
-La duración del embarazo concentra casi toda la información, como anticipaba el EDA (AUC
-univariado de 0.89). En Ranjbar et al. (2023) la edad gestacional también fue uno de los dos
-predictores más importantes; el otro, el antecedente de bajo peso en un embarazo previo, no
-está en el CNV. La importancia por ganancia describe qué usa el modelo, no efectos causales.
-
-2.10 Insights
--------------
+2.9 Insights
+------------
 
 - El límite está en la información de las variables, no en el modelo. Cinco enfoques distintos
-  llegan prácticamente al mismo AUC-PR (entre 0.677 y 0.682) y una sola variable, la duración
-  del embarazo, concentra el 91 % de la importancia en XGBoost. Para mejorar de forma clara
+  llegan prácticamente al mismo AUC-PR (entre 0.677 y 0.682). Para mejorar de forma clara
   harían falta variables clínicas que el CNV no registra.
 - Más complejidad da mejoras de milésimas: pasar de la regresión logística simple (≈ 13 s de
   ajuste) a XGBoost (≈ 64 min de grilla) sube el AUC-ROC en 0.005 y el AUC-PR en 0.004.
@@ -257,7 +232,7 @@ está en el CNV. La importancia por ganancia describe qué usa el modelo, no efe
 - La accuracy engaña en este problema: el baseline tiene la mejor accuracy (0.957) y es el que
   más casos pierde.
 
-2.11 Limitaciones
+2.10 Limitaciones
 -----------------
 
 - DUR_EMB_PARTO se conoce en el momento del parto. Los modelos sirven para anticipar, antes del
