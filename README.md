@@ -106,7 +106,8 @@ AI_Project/
     │   ├── paper_luis_araujo.pdf
     │   ├── paper_Nilton_Condori.pdf
     │   └── paper_Pedro_Vilcayauri.pdf
-    └── report.pdf                           # reporte académico (paper de 5 páginas)
+    ├── report.pdf                           # reporte académico (paper de 5 páginas)
+    └── presentation.pdf                     # diapositivas de la presentación
 ```
 
 ## Cómo ejecutar

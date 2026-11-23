@@ -1,6 +1,6 @@
 # Entregable final (semana 15)
 
-> **Estado:** en progreso. Los cinco modelos están implementados y comparados, y el reporte académico está listo; falta la presentación.
+> **Estado:** completo. Los cinco modelos están implementados y comparados, y el reporte académico y la presentación están listos.
 
 ## Descripción de lo realizado
 
@@ -34,7 +34,7 @@ La profesora indicó que la estructura propuesta en las indicaciones del curso e
 - [x] Gráficos de cada modelo en `results/plots/`.
 - [x] Análisis de qué modelo funcionó mejor, por qué, limitaciones e insights en `results/model_comparison.txt`.
 - [x] `README.md` actualizado: metodología con umbral fijo en 0.5, modelos implementados, resultados, estructura del repositorio y enlaces de Colab de cada notebook.
-- [x] Actualizar `results/metrics.csv`, `results/plots/`, `results/model_comparison.txt` y `README.md` con XGBoost y la conclusión final.
+- [x] `results/metrics.csv`, `results/plots/`, `results/model_comparison.txt` y `README.md` actualizados con XGBoost y la conclusión final.
 - [x] Reporte académico de 5 páginas en `proyecto/report.pdf`, con la declaración de uso de IA y la contribución de cada integrante.
-- [ ] Presentación en clase (máximo 5 minutos, enfocada en resultados y conclusiones).
-- [ ] `ENTREGABLE_FINAL.md` confirmando la completitud del entregable.
+- [x] Presentación en clase (máximo 5 minutos, enfocada en resultados y conclusiones) en `proyecto/presentation.pdf`.
+- [x] `ENTREGABLE_FINAL.md` confirmando la completitud del entregable.
