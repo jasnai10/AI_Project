@@ -56,21 +56,21 @@ Certificados de Nacido Vivo del MINSA (Plataforma Nacional de Datos Abiertos), c
 | `03_rl_balanceada.ipynb` | Regresión logística balanceada (`class_weight="balanced"`) | Mejor clasificador en Almeida et al. (2026). |
 | `04_rl_smote.ipynb` | Regresión logística con sobremuestreo SMOTE-NC | Mejor clasificador en Khan et al. (2022); se usa SMOTE-NC porque casi todas las variables son categóricas. |
 | `05_random_forest.ipynb` | Random forest balanceado | Único modelo presente en los cuatro papers: mejor modelo para estimar el peso en Khan et al. (2022), entre los tres con mayor AUROC en Ranjbar et al. (2023) y modelo de comparación en Almeida et al. (2026). |
-| `06_xgboost.ipynb` | XGBoost *(en desarrollo)* | Mejor modelo para predecir el bajo peso según Ranjbar et al. (2023). |
+| `06_xgboost.ipynb` | XGBoost balanceado (`scale_pos_weight`) | Mejor modelo para predecir el bajo peso según Ranjbar et al. (2023). El balanceo se eligió en la grilla de hiperparámetros. |
 
 ## Resultados
 
-Resultados provisionales en el test 2024–2025 (717 673 nacimientos, 6.81 % con bajo peso), con umbral 0.5:
+Resultados en el test 2024–2025 (717 673 nacimientos, 6.81 % con bajo peso), con umbral 0.5. En negrita, el mejor valor de cada columna:
 
 | Modelo | Accuracy | Recall | F1 | Precisión | AUC-ROC | AUC-PR |
 |---|---|---|---|---|---|---|
-| Baseline: regresión logística simple | 0.957 | 0.473 | 0.600 | 0.820 | 0.908 | 0.677 |
-| Regresión logística balanceada | 0.865 | 0.809 | 0.449 | 0.310 | 0.908 | 0.677 |
-| Regresión logística con SMOTE-NC | 0.948 | 0.630 | 0.624 | 0.618 | 0.907 | 0.677 |
+| Baseline: regresión logística simple | **0.957** | 0.473 | 0.600 | **0.820** | 0.908 | 0.677 |
+| Regresión logística balanceada | 0.865 | **0.809** | 0.449 | 0.310 | 0.908 | 0.677 |
+| Regresión logística con SMOTE-NC | 0.948 | 0.630 | **0.624** | 0.618 | 0.907 | 0.677 |
 | Random forest balanceado | 0.880 | 0.793 | 0.475 | 0.339 | 0.911 | 0.679 |
-| XGBoost | *pendiente* | | | | | |
+| XGBoost balanceado | 0.873 | 0.803 | 0.462 | 0.325 | **0.913** | **0.682** |
 
-Con cuatro de los cinco modelos evaluados, el random forest balanceado es el de mejor capacidad de discriminación y detecta el 79 % de los casos de bajo peso. El resumen completo y el análisis detallado están en [`results/model_comparison.txt`](proyecto/results/model_comparison.txt).
+**XGBoost balanceado es el modelo con mejor capacidad de discriminación** (AUC-ROC 0.913 y AUC-PR 0.682, los más altos de los cinco) y detecta el 80 % de los casos de bajo peso. Su ventaja es pequeña: 0.005 en AUC-ROC y 0.004 en AUC-PR sobre el baseline. Los cinco modelos discriminan de forma parecida, y lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas alarmas. En XGBoost, la duración del embarazo concentra el 91 % de la importancia de las variables. El resumen completo y el análisis detallado están en [`results/model_comparison.txt`](proyecto/results/model_comparison.txt), y el reporte académico, en [`report.pdf`](proyecto/report.pdf).
 
 ## Estructura del repositorio
 
@@ -94,18 +94,20 @@ AI_Project/
     │   ├── 03_rl_balanceada.ipynb           # regresión logística balanceada
     │   ├── 04_rl_smote.ipynb                # regresión logística con SMOTE-NC
     │   ├── 05_random_forest.ipynb           # random forest balanceado
-    │   └── 06_xgboost.ipynb                 # XGBoost (en desarrollo)
+    │   └── 06_xgboost.ipynb                 # XGBoost balanceado
     ├── src/
     │   └── preprocessing.py                 # carga, limpieza, features, partición y preprocesador
     ├── results/
     │   ├── model_comparison.txt             # resumen de resultados y análisis detallado
     │   ├── metrics.csv                      # tabla comparativa de métricas en test
     │   └── plots/                           # gráficos de cada modelo
-    └── papers/
-        ├── paper_Jair_Aguilera.pdf
-        ├── paper_luis_araujo.pdf
-        ├── paper_Nilton_Condori.pdf
-        └── paper_Pedro_Vilcayauri.pdf
+    ├── papers/
+    │   ├── paper_Jair_Aguilera.pdf
+    │   ├── paper_luis_araujo.pdf
+    │   ├── paper_Nilton_Condori.pdf
+    │   └── paper_Pedro_Vilcayauri.pdf
+    ├── report.pdf                           # reporte académico (paper de 5 páginas)
+    └── report_src/                          # fuente del reporte: HTML y scripts de sus dos figuras
 ```
 
 ## Cómo ejecutar
@@ -119,8 +121,9 @@ Los notebooks están preparados para **Google Colab** y ya están guardados con 
 | [`03_rl_balanceada.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/03_rl_balanceada.ipynb) | Regresión logística balanceada | ≈ 15 min |
 | [`04_rl_smote.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/04_rl_smote.ipynb) | Regresión logística con SMOTE-NC | ≈ 1 h |
 | [`05_random_forest.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/05_random_forest.ipynb) | Random forest balanceado | ≈ 40 min |
+| [`06_xgboost.ipynb`](https://colab.research.google.com/github/jasnai10/AI_Project/blob/main/proyecto/notebooks/06_xgboost.ipynb) | XGBoost balanceado | Más de 1 h (la grilla tomó ≈ 64 min en local) |
 
-Con el notebook abierto, ejecutar todas las celdas desde **Entorno de ejecución → Ejecutar todas**, con el entorno estándar de CPU. La primera celda descarga automáticamente el repositorio en la sesión de Colab e instala `imbalanced-learn` si falta, así que no es necesario subir ningún archivo. Cada notebook es independiente: carga el dataset original y aplica el mismo preprocesamiento, así que se pueden ejecutar en cualquier orden. En los notebooks largos conviene mantener la pestaña abierta hasta que terminen.
+Con el notebook abierto, ejecutar todas las celdas desde **Entorno de ejecución → Ejecutar todas**, con el entorno estándar de CPU. La primera celda descarga automáticamente el repositorio en la sesión de Colab e instala `imbalanced-learn` o `xgboost` si faltan, así que no es necesario subir ningún archivo. Cada notebook es independiente: carga el dataset original y aplica el mismo preprocesamiento, así que se pueden ejecutar en cualquier orden. En los notebooks largos conviene mantener la pestaña abierta hasta que terminen.
 
 Si los enlaces no funcionan, también se pueden abrir manualmente:
 

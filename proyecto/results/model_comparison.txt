@@ -13,15 +13,19 @@ Modelo                                Accuracy   Recall  F1      Precisión  AUC
 Baseline: regresión logística simple  0.957*     0.473   0.600   0.820*     0.908    0.677
 Regresión logística balanceada        0.865      0.809*  0.449   0.310      0.908    0.677
 Regresión logística con SMOTE-NC      0.948      0.630   0.624*  0.618      0.907    0.677
-Random Forest balanceado              0.880      0.793   0.475   0.339      0.911*   0.679*
-XGBoost                               pendiente
+Random Forest balanceado              0.880      0.793   0.475   0.339      0.911    0.679
+XGBoost balanceado                    0.873      0.803   0.462   0.325      0.913*   0.682*
 
-Modelo con mejor desempeño hasta ahora: RANDOM FOREST BALANCEADO (a reserva de XGBoost).
+Modelo con mejor desempeño: XGBOOST BALANCEADO.
 
-- Es el único que supera al baseline en las dos métricas de discriminación (AUC-ROC 0.911 y
-  AUC-PR 0.679), aunque por poco.
-- Detecta el 79 % de los recién nacidos con bajo peso (38 800 de 48 907). Una de cada tres
-  alertas es un caso real, cinco veces más que al azar.
+- Es el que mejor discrimina de los cinco (AUC-ROC 0.913 y AUC-PR 0.682), aunque por poco:
+  0.005 y 0.004 más que el baseline, y 0.002 y 0.003 más que el Random Forest balanceado, que
+  queda segundo.
+- La ventaja es consistente: también aparece en validación, donde sus 12 combinaciones de
+  hiperparámetros (AUC-PR entre 0.673 y 0.674) superan a todos los demás modelos (entre 0.666
+  y 0.670).
+- Detecta el 80 % de los recién nacidos con bajo peso (39 271 de 48 907). Una de cada tres
+  alertas es un caso real, casi cinco veces más que al azar.
 - Todos los modelos discriminan de forma parecida: el AUC-PR es unas 10 veces el del azar en
   todos. Lo que más cambia entre ellos es el equilibrio entre casos detectados y falsas
   alarmas.
@@ -50,11 +54,15 @@ definidos en src/preprocessing.py.
   2024-2025 (717 673).
 - Prevalencia: 6.32 % en train y validación; 6.81 % en test.
 - Ajuste de hiperparámetros: grilla evaluada en validación con AUC-PR; empate a menos de 0.001,
-  prefiriendo el modelo más simple.
+  prefiriendo el modelo más simple. En XGBoost, el número de árboles se elige además con early
+  stopping sobre la misma validación.
 - Umbral de decisión: 0.5, sin calibrar, como en Almeida et al. (2026), Khan et al. (2022) y
   Ranjbar et al. (2023).
 - Evaluación final: test 2024-2025, usado una sola vez por modelo.
-- Ejecución: Google Colab (entorno estándar de CPU, scikit-learn 1.6.1).
+- Ejecución: Google Colab (entorno estándar de CPU, scikit-learn 1.6.1) para los notebooks 02 a
+  05; XGBoost se ejecutó en local (CPU, xgboost 3.2.0, scikit-learn 1.9.1). El baseline,
+  reentrenado en local dentro del notebook 06, reproduce exactamente sus cifras de Colab, así
+  que los resultados son comparables.
 
 2.2 Métricas en test con cuatro decimales
 -----------------------------------------
@@ -65,6 +73,7 @@ Baseline                  0.9570    0.4732  0.6002  0.8204     0.9081   0.6774
 RL balanceada             0.8645    0.8086  0.4485  0.3103     0.9081   0.6769
 RL SMOTE-NC               0.9483    0.6296  0.6239  0.6183     0.9071   0.6770
 Random Forest balanceado  0.8803    0.7933  0.4745  0.3385     0.9107   0.6788
+XGBoost balanceado        0.8727    0.8030  0.4623  0.3246     0.9130   0.6818
 
 Matriz de confusión en test (umbral 0.5). De los 717 673 nacimientos del test, 48 907 tuvieron
 bajo peso.
@@ -75,6 +84,7 @@ Baseline                  23 144           25 763         5 067                0
 RL balanceada             39 548           9 359          87 893               2.2
 RL SMOTE-NC               30 790           18 117         19 006               0.6
 Random Forest balanceado  38 800           10 107         75 828               2.0
+XGBoost balanceado        39 271           9 636          81 718               2.1
 
 2.3 Hiperparámetros elegidos
 ----------------------------
@@ -105,20 +115,35 @@ Random Forest balanceado
                      {0.1, 0.3}
   Fijos:             class_weight="balanced", 50 árboles, max_depth=None
   Elegido:           min_samples_leaf=50, max_features=0.5, max_samples=0.3
-  AUC-PR validación: 0.6697 (la más alta)
+  AUC-PR validación: 0.6697
 
-Las curvas de AUC-PR en train y validación de cada grilla están en plots/ (sección 3).
+XGBoost balanceado
+  Grilla (12):       max_depth {4, 6, 8} x min_child_weight {1, 100} x scale_pos_weight
+                     {1, 14.8}
+  Fijos:             learning_rate=0.1, subsample=1, colsample_bytree=1, reg_lambda=1,
+                     gamma=0; hasta 2000 árboles, con early stopping tras 50 árboles sin
+                     mejora del AUC-PR en validación
+  Elegido:           max_depth=4, min_child_weight=100, scale_pos_weight=14.8 (balanceo
+                     completo), 917 árboles
+  AUC-PR validación: 0.6735, la más alta de los cinco modelos. Las 12 combinaciones quedaron
+                     empatadas (entre 0.6733 y 0.6740), así que decidió la regla de
+                     desempate: menor max_depth, mayor min_child_weight y, entre la versión
+                     con y sin balanceo, la de mayor recall.
+
+Las curvas de AUC-PR en train y validación de cada grilla están en plots/ (sección 3), junto
+con la importancia de las variables de XGBoost.
 
 Tiempo de ejecución en Colab: baseline ≈ 13 s de ajuste; RL balanceada ≈ 12 min de grilla; RL
 SMOTE-NC ≈ 39 min de sobremuestreo + 21 min de grilla; Random Forest ≈ 35 min de grilla.
+XGBoost se ejecutó en local: ≈ 64 min de grilla, no comparable directamente con Colab.
 
 2.4 Criterio para elegir el modelo final
 ----------------------------------------
 
 Cada métrica favorece a un modelo distinto (accuracy y precisión al baseline, recall a la RL
-balanceada, F1 a SMOTE-NC, AUC-ROC y AUC-PR al Random Forest), así que no se elige "por
-mayoría". Siguiendo las métricas clave de Almeida et al. (2026) y la métrica principal de
-Ranjbar et al. (2023), se aplica un orden de importancia fijado de antemano:
+balanceada, F1 a SMOTE-NC, AUC-ROC y AUC-PR a XGBoost), así que no se elige "por mayoría".
+Siguiendo las métricas clave de Almeida et al. (2026) y la métrica principal de Ranjbar et al.
+(2023), se aplica un orden de importancia fijado de antemano:
 
 1. Capacidad de discriminación (AUC-PR y AUC-ROC): qué tan bien separa el modelo los casos de
    bajo peso de los normales, sin depender del umbral. El AUC-PR es la métrica principal porque
@@ -131,62 +156,108 @@ Ranjbar et al. (2023), se aplica un orden de importancia fijado de antemano:
 La accuracy no se usa como criterio: con 6.8 % de prevalencia, predecir siempre "peso normal"
 ya daría cerca de 93 %.
 
-2.5 Por qué el Random Forest funcionó mejor
--------------------------------------------
+Con este orden, XGBoost queda primero: tiene el AUC-PR y el AUC-ROC más altos, y su recall
+(0.803) es el segundo, apenas por debajo del de la RL balanceada (0.809), que discrimina peor.
 
-- Es el único modelo no lineal evaluado hasta ahora. Los árboles capturan relaciones no
-  lineales e interacciones entre variables (por ejemplo, que el efecto de la duración del
-  embarazo cambie según el tipo de parto o la región) que la regresión logística, al sumar
-  efectos independientes, no puede representar.
-- Esa flexibilidad mejora levemente la discriminación (AUC-ROC 0.911 frente a 0.908; AUC-PR
-  0.679 frente a 0.677) y reduce las falsas alarmas para un mismo nivel de recall: frente a la
-  RL balanceada, con un recall parecido (0.79 frente a 0.81), da unas 12 000 falsas alarmas
-  menos.
-- En su grilla, max_features fue el hiperparámetro más influyente: con "sqrt" (3 de 9 variables
-  por división) el rendimiento fue claramente peor que con 0.5. Las hojas de 10 registros
-  mostraron sobreajuste; las de 50 dieron el mejor equilibrio.
-- La mejora es pequeña y tiene un costo: el Random Forest tarda mucho más en entrenar que la
-  regresión logística balanceada y es menos interpretable.
+2.5 Por qué XGBoost funcionó mejor
+----------------------------------
+
+- Es, junto con el Random Forest, uno de los dos modelos no lineales evaluados. Los árboles
+  capturan relaciones no lineales e interacciones entre variables (por ejemplo, que el efecto
+  de la duración del embarazo cambie según el tipo de parto o la región) que la regresión
+  logística, al sumar efectos independientes, no puede representar.
+- A diferencia del Random Forest, entrena los árboles uno tras otro y cada uno corrige los
+  errores de los anteriores (boosting). Además, cada corte puede usar las 53 columnas (en el
+  Random Forest elegido, cada corte ve solo la mitad, elegida al azar), y el número de árboles
+  se ajusta con early stopping en lugar de quedar fijo en 50.
+- Esa flexibilidad mejora levemente la discriminación: AUC-ROC 0.913 y AUC-PR 0.682, frente a
+  0.911 y 0.679 del Random Forest y 0.908 y 0.677 del baseline. Con el umbral 0.5 y un recall
+  casi igual al de la RL balanceada (0.80 frente a 0.81), da unas 6 200 falsas alarmas menos.
+  Frente al Random Forest detecta 471 casos más con unas 5 900 falsas alarmas más: con el
+  umbral fijo quedan en puntos de operación distintos, y la comparación de fondo es la del
+  AUC-ROC y el AUC-PR.
+- Su grilla casi no influyó: las 12 combinaciones quedaron empatadas porque el early stopping
+  compensa la profundidad con el número de árboles (entre 653 y 917 árboles con max_depth=4 y
+  entre 117 y 227 con max_depth=8). El sobreajuste fue leve: la brecha de AUC-PR entre train y
+  validación no pasó de 0.007, frente a 0.021 del Random Forest con hojas de 10 registros. El
+  balanceo (scale_pos_weight) cambió el punto de operación, no la discriminación.
+- El Random Forest balanceado queda segundo. En su grilla, max_features fue el hiperparámetro
+  más influyente: con "sqrt" (unas 7 de las 53 columnas por corte) el rendimiento fue
+  claramente peor que con 0.5. Las hojas de 10 registros mostraron sobreajuste; las de 50
+  dieron el mejor equilibrio.
+- La mejora es pequeña y tiene un costo: XGBoost tarda mucho más en entrenar que la regresión
+  logística (≈ 64 min de grilla frente a ≈ 13 s del baseline) y su modelo final, de 917
+  árboles, es menos interpretable.
 
 2.6 SMOTE-NC no mejora la discriminación
 ----------------------------------------
 
 A diferencia de Khan et al. (2022), que trabajó con 89 casos de bajo peso, aquí hay más de 200
-000 casos reales en train; los casos sintéticos no aportan información nueva. Además, fue el
-modelo más costoso de entrenar (≈ 1 hora en Colab), cuando class_weight="balanced" logra el
-mismo efecto en minutos.
+000 casos reales en train; los casos sintéticos no aportan información nueva. Además, fue uno
+de los modelos más costosos de entrenar (≈ 1 hora en Colab), cuando class_weight="balanced"
+logra el mismo efecto en minutos.
 
 2.7 Calibración
 ---------------
 
 Solo el baseline produce probabilidades bien calibradas. Los modelos balanceados (RL
-balanceada, SMOTE-NC y Random Forest) sobreestiman el riesgo: en el decil de mayor riesgo
-predicen entre 0.68 y 0.88, cuando la proporción observada es cercana a 0.48. Para usar sus
-probabilidades como riesgo absoluto habría que recalibrarlas.
+balanceada, SMOTE-NC, Random Forest y XGBoost) sobreestiman el riesgo: en el decil de mayor
+riesgo predicen entre 0.68 y 0.89, cuando la proporción observada es cercana a 0.48. En
+XGBoost es el efecto esperado de scale_pos_weight ≈ 14.8, que multiplica por ese factor las
+odds que estima el modelo: en el noveno decil predice ≈ 0.55 cuando se observa ≈ 0.08. Para
+usar sus probabilidades como riesgo absoluto habría que recalibrarlas.
 
 2.8 Estabilidad en el tiempo
 ----------------------------
 
 El desempeño se mantiene entre validación (2015-2023) y test (2024-2025): el AUC-ROC del
-baseline pasa de 0.904 a 0.908. Los modelos entrenados con el pasado generalizan a los años
-siguientes.
+baseline pasa de 0.904 a 0.908, y el de XGBoost de 0.909 a 0.913. Los modelos entrenados con
+el pasado generalizan a los años siguientes.
 
-2.9 Insights
-------------
+2.9 Variables más importantes
+-----------------------------
+
+Importancia por ganancia de XGBoost: cuánto reduce cada variable la pérdida en train, sumando
+las columnas del one-hot de cada variable original.
+
+Variable           % de la ganancia
+-----------------  ----------------
+DUR_EMB_PARTO      90.83
+Tipo_Parto          2.83
+departamento        1.98
+Financiador_Parto   1.52
+Num_embar_madre     1.02
+Nivel_Instruccion   0.79
+sexo_nacido         0.65
+edad_grupo          0.27
+pais_grupo          0.11
+
+La duración del embarazo concentra casi toda la información, como anticipaba el EDA (AUC
+univariado de 0.89). En Ranjbar et al. (2023) la edad gestacional también fue uno de los dos
+predictores más importantes; el otro, el antecedente de bajo peso en un embarazo previo, no
+está en el CNV. La importancia por ganancia describe qué usa el modelo, no efectos causales.
+
+2.10 Insights
+-------------
 
 - El límite está en la información de las variables, no en el modelo. Cinco enfoques distintos
-  llegan prácticamente al mismo AUC-PR; para mejorar de forma clara harían falta variables
-  clínicas que el CNV no registra.
+  llegan prácticamente al mismo AUC-PR (entre 0.677 y 0.682) y una sola variable, la duración
+  del embarazo, concentra el 91 % de la importancia en XGBoost. Para mejorar de forma clara
+  harían falta variables clínicas que el CNV no registra.
+- Más complejidad da mejoras de milésimas: pasar de la regresión logística simple (≈ 13 s de
+  ajuste) a XGBoost (≈ 64 min de grilla) sube el AUC-ROC en 0.005 y el AUC-PR en 0.004.
 - Elegir el modelo es también elegir un punto de operación. Si la prioridad es no perder casos,
   conviene un modelo balanceado (recall ≈ 0.8, con unas 2 falsas alarmas por caso detectado);
   si importa más no saturar los servicios, SMOTE-NC o el baseline. Esa decisión depende del
   costo de perder un caso frente al de una falsa alarma.
 - Con millones de registros, la solución más simple al desbalance basta:
-  class_weight="balanced" da el mismo resultado que SMOTE-NC a una fracción del costo.
+  class_weight="balanced" da el mismo resultado que SMOTE-NC a una fracción del costo. En
+  XGBoost, balancear por pesos tampoco cambió la discriminación, a diferencia de lo que
+  reportan Almeida et al. (2026) para el random forest.
 - La accuracy engaña en este problema: el baseline tiene la mejor accuracy (0.957) y es el que
   más casos pierde.
 
-2.10 Limitaciones
+2.11 Limitaciones
 -----------------
 
 - DUR_EMB_PARTO se conoce en el momento del parto. Los modelos sirven para anticipar, antes del
@@ -196,22 +267,19 @@ siguientes.
   elección.
 - El modelo final se elige comparando métricas en el test, como en los estudios de referencia;
   esto puede dar una estimación algo optimista del modelo elegido.
+- No se estimó la incertidumbre de las métricas (intervalos de confianza o bootstrap). Las
+  diferencias de discriminación entre los modelos son de milésimas, así que con un solo
+  período de test no se puede asegurar que su orden se mantenga en otros años.
 - La prevalencia del test (6.81 %) es mayor que la de train (6.32 %), lo que cambia el nivel de
   la precisión y el F1.
 - El CNV no registra variables clínicas (controles prenatales, anemia, hipertensión, IMC) que
   podrían mejorar la predicción.
 - Ajuste acotado por cómputo: una sola partición de validación y una sola semilla; en SMOTE-NC
-  no se ajustó k_neighbors ni se probó el balance total, y el Random Forest usó 50 árboles.
+  no se ajustó k_neighbors ni se probó el balance total, el Random Forest usó 50 árboles y en
+  XGBoost quedaron fijos learning_rate=0.1 y el submuestreo. En XGBoost, además, el early
+  stopping usa la misma validación que la grilla.
+- XGBoost se ejecutó en local y los demás modelos en Colab: los resultados son comparables (el
+  baseline da las mismas cifras en ambos entornos), pero los tiempos de ejecución no.
 - Redondeo del peso en 2500 g (16 353 registros exactos), que introduce ruido en la etiqueta
   justo en el umbral.
 - El test no incluye diciembre de 2025.
-
-
-###############################################################################################
-
-3. PENDIENTE
-============
-
-[ ] 06_xgboost.ipynb: implementar, ajustar y evaluar con el mismo protocolo.
-[ ] Actualizar el resumen, las tablas, metrics.csv, los gráficos, el modelo final y el análisis
-    con los resultados de XGBoost.

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Predicción del bajo peso al nacer en el Perú con datos del CNV</title>
+<!--
+  Fuente del reporte académico (proyecto/report.pdf). Para regenerarlo, desde proyecto/report_src/:
+    1. python figura_comparacion.py   (figura 1, a partir de results/metrics.csv)
+    2. python figura_curvas.py        (figura 2; reentrena el modelo elegido, unos 5 minutos)
+    3. "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless --no-pdf-header-footer
+       --print-to-pdf="..\report.pdf" report.html
+-->
+<style>
+  @page {
+    size: A4;
+    margin: 1.8cm 1.9cm 1.8cm 1.9cm;
+    @bottom-center { content: counter(page); font-family: Cambria, Georgia, serif; font-size: 8.5pt; color: #555; }
+  }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0; background: #fff; color: #111;
+    font-family: Cambria, Georgia, "Times New Roman", serif; font-size: 10pt; line-height: 1.28;
+    text-align: justify; hyphens: auto; font-kerning: normal;
+  }
+  h1 { font-size: 15pt; line-height: 1.2; text-align: center; margin: 0 0 6pt; font-weight: 700; }
+  .autores { text-align: center; font-size: 10.5pt; margin: 0; }
+  .afiliacion { text-align: center; font-size: 9pt; line-height: 1.3; color: #444; margin: 2pt 0 0; }
+  .resumen {
+    margin: 9pt 0.8cm 2pt; font-size: 9.2pt; line-height: 1.26;
+    border-top: 0.6pt solid #999; border-bottom: 0.6pt solid #999; padding: 5pt 0;
+  }
+  .resumen p { margin: 0 0 3pt; }
+  .resumen p:last-child { margin: 0; }
+  h2 { font-size: 11pt; margin: 9pt 0 3pt; break-after: avoid; }
+  h3 { font-size: 10pt; font-style: italic; margin: 5pt 0 2pt; break-after: avoid; }
+  p { margin: 0 0 4.5pt; orphans: 2; widows: 2; }
+  code { font-family: Consolas, monospace; font-size: 8.6pt; }
+  sup { font-size: 0.7em; line-height: 0; vertical-align: 0.42em; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.4pt; line-height: 1.2; text-align: left; }
+  caption { caption-side: top; text-align: left; font-size: 8.8pt; margin-bottom: 3pt; line-height: 1.25; }
+  th, td { padding: 1.5pt 4pt; vertical-align: top; }
+  thead th { border-top: 1pt solid #000; border-bottom: 0.6pt solid #000; font-weight: 700; }
+  tbody tr:last-child td { border-bottom: 1pt solid #000; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .bloque { margin: 6pt 0 7pt; break-inside: avoid; }
+  figure { margin: 6pt 0 7pt; break-inside: avoid; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 8.8pt; line-height: 1.25; margin-top: 2pt; text-align: left; }
+  .et { font-weight: 700; }
+  ul.lim { margin: 0 0 4pt; padding-left: 13pt; }
+  ul.lim li { margin-bottom: 1.5pt; }
+  .refs { font-size: 8.5pt; line-height: 1.22; text-align: left; }
+  .refs p { margin: 0 0 2.5pt; padding-left: 14pt; text-indent: -14pt; }
+  .nw { white-space: nowrap; }
+  a { color: inherit; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>Predicción del bajo peso al nacer en el Perú con datos del Certificado de Nacido Vivo: comparación de modelos de aprendizaje automático</h1>
+<p class="autores">Jair Aguilera · Luis Araujo · Nilton Condori · Pedro Vilcayauri</p>
+<p class="afiliacion">Facultad de Ciencias e Ingeniería, Pontificia Universidad Católica del Perú<br>Inteligencia Artificial Aplicada (1INF62) · <span class="nw">Semestre 2026-2</span></p>
+
+<div class="resumen">
+  <p><b>Resumen.</b> El bajo peso al nacer (menos de 2500&nbsp;g) afectó al 6.38&nbsp;% de los nacimientos registrados en el Perú entre 2015 y 2025. Este trabajo compara cinco clasificadores tomados de la literatura (regresión logística simple como baseline, regresión logística balanceada, regresión logística con SMOTE-NC, random forest balanceado y XGBoost) para predecir el bajo peso con 9 variables del Certificado de Nacido Vivo (CNV) del Ministerio de Salud, conocidas al momento del parto y antes del pesaje. Con 4.76 millones de registros, los modelos se ajustan con los nacimientos de 2015–2023 y se evalúan una sola vez con los de 2024–2025. XGBoost obtiene la mejor discriminación (AUC-ROC 0.913; AUC-PR 0.682), apenas por encima del baseline (0.908; 0.677): los cinco modelos ordenan el riesgo casi igual, y lo que más los distingue es el punto de operación con el umbral 0.5. XGBoost balanceado detecta el 80&nbsp;% de los casos con 2.1 falsas alarmas por caso detectado; el baseline, el 47&nbsp;% con 0.2. La duración del embarazo concentra el 91&nbsp;% de la importancia del modelo: el límite está en la información que registra el CNV más que en el algoritmo.</p>
+  <p><b>Palabras clave:</b> bajo peso al nacer; aprendizaje automático; XGBoost; desbalance de clases; registros administrativos; Perú.</p>
+</div>
+
+<h2>1. Introducción</h2>
+<p>El bajo peso al nacer, definido por la Organización Mundial de la Salud como un peso menor de 2500&nbsp;g, se asocia con mayor morbilidad y mortalidad neonatal y con problemas de salud a largo plazo (World Health Organization, 2014). En el Perú, cada nacimiento genera un Certificado de Nacido Vivo (CNV), un registro administrativo nacional que el Ministerio de Salud (MINSA) publica como datos abiertos y que rara vez se ha usado para construir modelos predictivos.</p>
+<p>Este trabajo evalúa si los modelos de aprendizaje automático propuestos en la literatura pueden identificar a los recién nacidos con bajo peso a partir del CNV, y cuál funciona mejor. Hay dos dificultades: la clase de interés es poco frecuente (un caso por cada 15 nacimientos) y la variable más informativa, la duración del embarazo, se registra al momento del parto. Por eso la tarea se plantea como la identificación, al nacer y antes del pesaje, de los recién nacidos que pueden necesitar atención especial, y no como una predicción prenatal. El trabajo aporta una selección de variables con criterios explícitos, una comparación de cinco modelos con un protocolo común y una partición temporal, y un análisis de por qué un modelo funciona mejor y del costo de cada punto de operación.</p>
+
+<h2>2. Trabajos relacionados</h2>
+<p>Se analizaron cuatro estudios revisados por pares sobre el bajo peso o el peso al nacer, con datos distintos del CNV (Tabla&nbsp;1). Almeida et al. (2026) usaron el registro de nacidos vivos de São Paulo, el más parecido al CNV por ser poblacional y administrativo: la regresión logística con pesos de clase superó al random forest, y concluyen que los modelos simples rinden igual o mejor en datos poblacionales y que el balanceo es necesario cuando el desenlace es raro. Khan et al. (2022) compararon 30 algoritmos y obtuvieron la mejor clasificación con regresión logística y sobremuestreo SMOTE (Chawla et al., 2002) aplicado solo al entrenamiento. Ranjbar et al. (2023) evaluaron ocho algoritmos: XGBoost fue el mejor modelo global, y la edad gestacional y el antecedente de bajo peso, los predictores más importantes. Liu et al. (2022) estimaron el peso al nacer con ocho modelos de regresión y también hallaron que la edad gestacional es el predictor principal. De esta revisión se tomaron los modelos a implementar, dos formas de tratar el desbalance (pesos de clase y SMOTE) y el umbral de 0.5 por defecto.</p>
+
+<table class="bloque">
+  <caption><span class="et">Tabla 1.</span> Estudios revisados. RL: regresión logística; RF: random forest; EAU: Emiratos Árabes Unidos.</caption>
+  <thead><tr><th>Estudio</th><th>Datos</th><th class="n">Prevalencia</th><th>Modelos</th><th>Mejor resultado reportado</th></tr></thead>
+  <tbody>
+    <tr><td>Almeida et al. (2026)</td><td>Registro SINASC, São Paulo (Brasil); 2.5 millones de nacidos vivos</td><td class="n">9.5&nbsp;%</td><td>RL y RF, con y sin pesos de clase</td><td>RL balanceada: AUC 0.85, recall 0.69</td></tr>
+    <tr><td>Khan et al. (2022)</td><td>Cohorte de tres hospitales (EAU); 821 madres</td><td class="n">10.8&nbsp;%</td><td>30 algoritmos; SMOTE</td><td>RL con SMOTE: accuracy 0.90, F1 ponderado 0.89</td></tr>
+    <tr><td>Ranjbar et al. (2023)</td><td>Red IMaN Net (Irán); 8&nbsp;853 partos</td><td class="n">14.5&nbsp;%</td><td>8 algoritmos</td><td>XGBoost: AUROC 0.79, F1 0.77; red neuronal: AUROC 0.86</td></tr>
+    <tr><td>Liu et al. (2022)</td><td>Cohorte PKUBC-T (China); 4&nbsp;754 pares madre-hijo</td><td class="n">—</td><td>8 modelos de regresión del peso</td><td>SVR y ensamble de votación: RMSE de 351 a 375&nbsp;g</td></tr>
+  </tbody>
+</table>
+
+<h2>3. Datos y metodología</h2>
+<h3>3.1. Datos y selección de variables</h3>
+<p>Se usó el registro de Certificados de Nacido Vivo del MINSA, publicado en la Plataforma Nacional de Datos Abiertos con corte al 30 de noviembre de 2025: 4&nbsp;874&nbsp;510 registros y 22 variables de 2015 a 2025 (Ministerio de Salud del Perú, 2025). La variable objetivo vale 1 si el peso es menor de 2500&nbsp;g; tras eliminar 3&nbsp;024 registros sin peso válido, la prevalencia es de 6.38&nbsp;%. El análisis exploratorio evaluó las 22 columnas con seis criterios: validez (que la variable exista antes del pesaje y no describa el parto ni el desenlace), calidad, redundancia, asociación propia con el bajo peso condicionada a la duración del embarazo, costo en filas perdidas y uso. Se seleccionaron 9 variables: duración del embarazo en semanas, tipo de parto (único o múltiple), departamento de residencia, grupo de edad de la madre, número de embarazos, nivel de instrucción, financiador del parto, sexo del recién nacido y país de origen de la madre. Se excluyeron las variables que se definen durante el parto o miden al recién nacido (como la talla o quién atendió el parto), las de baja calidad (estado civil, hijos fallecidos y abortos previos) y una redundante (hijos vivos). La duración del embarazo domina: por sí sola alcanza un AUC de 0.89, frente a 0.58 o menos de cualquier otra variable.</p>
+
+<h3>3.2. Preprocesamiento y partición temporal</h3>
+<p>Se repararon 388 filas con separadores corruptos, los códigos de faltante y los valores fuera de rango se convirtieron en faltantes, y se conservaron los casos completos (4&nbsp;764&nbsp;960 registros, el 97.81&nbsp;%). Las 7 variables categóricas se codificaron con <i>one-hot</i> y las 2 numéricas se estandarizaron (53 columnas), ajustando el preprocesador solo con el entrenamiento. Como la prevalencia aumentó en los últimos años mientras la capacidad discriminante de la duración del embarazo se mantuvo estable, se usó una partición temporal: entrenamiento (3&nbsp;237&nbsp;829 registros) y validación (809&nbsp;458) con 2015–2023, al azar y estratificados (6.32&nbsp;% de bajo peso), y prueba con 2024–2025 (717&nbsp;673 registros, 6.81&nbsp;%), usada una sola vez por modelo.</p>
+
+<h3>3.3. Modelos y ajuste de hiperparámetros</h3>
+<p>Se implementaron cinco modelos con scikit-learn (Pedregosa et al., 2011) y XGBoost (Chen y Guestrin, 2016), cada uno en su propio notebook (Tabla&nbsp;2): una regresión logística sin tratamiento del desbalance (baseline); una con pesos de clase inversos a la frecuencia, como en Almeida et al. (2026); una con sobremuestreo SMOTE-NC, la variante de SMOTE para variables categóricas, aplicado solo al entrenamiento como en Khan et al. (2022); un random forest (Breiman, 2001) con pesos de clase; y XGBoost, el mejor modelo de Ranjbar et al. (2023), que elige el balanceo (<code>scale_pos_weight</code>) en su grilla. Los hiperparámetros se eligieron por AUC-PR en validación: las combinaciones a menos de 0.001 del mejor valor se consideraron empatadas y se prefirió la más simple. En XGBoost, el número de árboles se fijó con <i>early stopping</i> (hasta 2000 árboles, con parada tras 50 sin mejora en validación).</p>
+
+<table class="bloque">
+  <caption><span class="et">Tabla 2.</span> Modelos implementados, tratamiento del desbalance e hiperparámetros elegidos por AUC-PR en validación (entre paréntesis, el número de combinaciones de la grilla).</caption>
+  <thead><tr><th>Modelo</th><th>Desbalance</th><th>Grilla</th><th>Elegido</th><th class="n">AUC-PR val.</th></tr></thead>
+  <tbody>
+    <tr><td>RL simple (baseline)</td><td>Ninguno</td><td>Sin ajuste (C&nbsp;=&nbsp;1, L2)</td><td>—</td><td class="n">0.6666</td></tr>
+    <tr><td>RL balanceada</td><td>Pesos de clase</td><td>C de 10<sup>−5</sup> a 1 × penalización L1/L2 (12)</td><td>L2, C&nbsp;=&nbsp;10<sup>−4</sup></td><td class="n">0.6655</td></tr>
+    <tr><td>RL con SMOTE-NC</td><td>Sobremuestreo</td><td>Proporción 0.25/0.5 × C 10<sup>−4</sup>/10<sup>−3</sup> × L1/L2 (8)</td><td>0.25, L2, C&nbsp;=&nbsp;10<sup>−4</sup></td><td class="n">0.6659</td></tr>
+    <tr><td>Random forest balanceado</td><td>Pesos de clase</td><td>Hoja mínima 10/50/200 × columnas por corte √p/0.5 × filas por árbol 0.1/0.3 (12)</td><td>50, 0.5, 0.3; 50 árboles</td><td class="n">0.6697</td></tr>
+    <tr><td>XGBoost balanceado</td><td><code>scale_pos_weight</code> 1/14.8</td><td>Profundidad 4/6/8 × <code>min_child_weight</code> 1/100 × balanceo (12)</td><td>4, 100, 14.8; 917 árboles</td><td class="n">0.6735</td></tr>
+  </tbody>
+</table>
+
+<h3>3.4. Métricas y criterio de selección</h3>
+<p>Se reportan el AUC-ROC y el AUC-PR, que no dependen del umbral, y la precisión, el recall, el F1 y la accuracy con el umbral de 0.5, sin calibrar, como en los estudios revisados. El AUC-PR es la métrica principal porque la clase es rara: para un clasificador al azar vale la prevalencia (0.068 en la prueba). El modelo final se eligió con un orden fijado de antemano: primero la discriminación (AUC-PR y AUC-ROC), luego el recall, por ser la prioridad clínica, y por último el F1 y la precisión. La accuracy no se usa como criterio: predecir siempre «peso normal» ya da un 93&nbsp;%.</p>
+
+<h2>4. Resultados</h2>
+<h3>4.1. Discriminación</h3>
+<p>Los cinco modelos tienen un AUC-ROC de 0.907 a 0.913 y un AUC-PR de 0.677 a 0.682, unas diez veces el del azar (Tabla&nbsp;3). XGBoost balanceado obtiene los valores más altos en ambas métricas y es el modelo elegido, pero su ventaja es pequeña: 0.005 en AUC-ROC y 0.004 en AUC-PR sobre el baseline, y 0.002 y 0.003 sobre el random forest. La ventaja se repite en validación, donde las 12 combinaciones de XGBoost (AUC-PR de 0.6733 a 0.6740) superan a todos los demás modelos (0.6697 o menos), y se mantiene en el tiempo: el AUC-ROC de XGBoost pasa de 0.909 en validación (2015–2023) a 0.913 en la prueba (2024–2025).</p>
+
+<table class="bloque">
+  <caption><span class="et">Tabla 3.</span> Métricas en la prueba 2024–2025 (717&nbsp;673 nacimientos, 48&nbsp;907 con bajo peso). Precisión, recall, F1, accuracy, casos detectados y falsas alarmas usan el umbral de 0.5. En negrita, el mejor valor de cada métrica.</caption>
+  <thead><tr><th>Modelo</th><th class="n">AUC-ROC</th><th class="n">AUC-PR</th><th class="n">Recall</th><th class="n">Precisión</th><th class="n">F1</th><th class="n">Accuracy</th><th class="n">Detectados</th><th class="n">Falsas alarmas</th></tr></thead>
+  <tbody>
+    <tr><td>RL simple (baseline)</td><td class="n">0.908</td><td class="n">0.677</td><td class="n">0.473</td><td class="n"><b>0.820</b></td><td class="n">0.600</td><td class="n"><b>0.957</b></td><td class="n">23&nbsp;144</td><td class="n">5&nbsp;067</td></tr>
+    <tr><td>RL balanceada</td><td class="n">0.908</td><td class="n">0.677</td><td class="n"><b>0.809</b></td><td class="n">0.310</td><td class="n">0.449</td><td class="n">0.865</td><td class="n">39&nbsp;548</td><td class="n">87&nbsp;893</td></tr>
+    <tr><td>RL con SMOTE-NC</td><td class="n">0.907</td><td class="n">0.677</td><td class="n">0.630</td><td class="n">0.618</td><td class="n"><b>0.624</b></td><td class="n">0.948</td><td class="n">30&nbsp;790</td><td class="n">19&nbsp;006</td></tr>
+    <tr><td>Random forest balanceado</td><td class="n">0.911</td><td class="n">0.679</td><td class="n">0.793</td><td class="n">0.339</td><td class="n">0.475</td><td class="n">0.880</td><td class="n">38&nbsp;800</td><td class="n">75&nbsp;828</td></tr>
+    <tr><td>XGBoost balanceado</td><td class="n"><b>0.913</b></td><td class="n"><b>0.682</b></td><td class="n">0.803</td><td class="n">0.325</td><td class="n">0.462</td><td class="n">0.873</td><td class="n">39&nbsp;271</td><td class="n">81&nbsp;718</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2. Punto de operación</h3>
+<p>Con el umbral de 0.5 los modelos se separan mucho más (Figura&nbsp;1a). El baseline tiene la mayor precisión (0.82) y la mayor accuracy (0.957), pero detecta menos de la mitad de los casos. Los tres modelos balanceados detectan alrededor del 80&nbsp;% con unas dos falsas alarmas por caso detectado, y SMOTE-NC queda en un punto intermedio, con el mejor F1 (0.62). XGBoost balanceado detecta 39&nbsp;271 de 48&nbsp;907 casos con 81&nbsp;718 falsas alarmas (2.1 por caso detectado); frente a la regresión balanceada, con un recall casi igual, genera unas 6&nbsp;200 falsas alarmas menos. La Figura&nbsp;2a muestra que XGBoost y el baseline tienen curvas precisión-recall casi idénticas y que, con el umbral de 0.5, quedan en zonas distintas de esa curva: el balanceo mueve el punto de operación, no la curva. En XGBoost, las versiones con y sin <code>scale_pos_weight</code> difieren en 0.0002 o menos de AUC-PR en validación.</p>
+
+<figure>
+  <img src="figura_comparacion.png" width="1980" height="825" alt="Precisión frente a recall de los cinco modelos con umbral 0.5, e importancia de las variables en XGBoost">
+  <figcaption><span class="et">Figura 1.</span> (a) Precisión y recall de los cinco modelos en la prueba con el umbral de 0.5: el baseline prioriza la precisión, y los modelos balanceados, el recall. (b) Importancia por ganancia de las variables en XGBoost balanceado: porcentaje de la reducción total de la pérdida, sumando las columnas <i>one-hot</i> de cada variable.</figcaption>
+</figure>
+
+<h3>4.3. Calibración e importancia de las variables</h3>
+<p>Los modelos balanceados sobreestiman el riesgo: en el decil de mayor riesgo, XGBoost predice en promedio cerca de 0.89 cuando la proporción observada de bajo peso es cercana a 0.48, mientras que el baseline está bien calibrado (Figura&nbsp;2b). En la importancia por ganancia de XGBoost, la duración del embarazo concentra el 90.8&nbsp;% del total; le siguen el tipo de parto (2.8&nbsp;%), el departamento (2.0&nbsp;%) y el financiador del parto (1.5&nbsp;%), y las otras cinco variables suman el 2.8&nbsp;% (Figura&nbsp;1b).</p>
+
+<h2>5. Discusión</h2>
+<p><b>Por qué XGBoost funcionó mejor.</b> Con el random forest, es uno de los dos modelos no lineales evaluados: sus árboles representan relaciones no lineales e interacciones que la regresión logística, al sumar efectos, no captura. A diferencia del random forest, construye los árboles en secuencia, cada uno corrigiendo los errores de los anteriores; cada corte puede usar las 53 columnas, y el número de árboles se ajusta con <i>early stopping</i>. Esto explica también que su grilla casi no importara: las 12 combinaciones empataron porque el <i>early stopping</i> compensa la profundidad con el número de árboles (de 653 a 917 árboles con profundidad 4 y de 117 a 227 con profundidad 8), y el sobreajuste fue leve (brecha de AUC-PR entre entrenamiento y validación de 0.007 como máximo, frente a 0.021 del random forest con hojas de 10 registros).</p>
+
+<figure>
+  <img src="figura_curvas.png" width="1980" height="810" alt="Curvas precisión-recall y de calibración de XGBoost balanceado y del baseline en la prueba">
+  <figcaption><span class="et">Figura 2.</span> XGBoost balanceado frente al baseline en la prueba 2024–2025. (a) Curvas precisión-recall casi superpuestas; los puntos marcan el umbral de 0.5 de cada modelo. (b) Calibración por deciles: el balanceo infla las probabilidades de XGBoost, mientras que las del baseline siguen la diagonal. Las curvas se obtuvieron reentrenando ambos modelos con los mismos datos e hiperparámetros; sus AUC coinciden con los de la Tabla&nbsp;3.</figcaption>
+</figure>
+<p><b>Por qué la mejora es tan pequeña.</b> Una sola variable lleva casi toda la señal. La duración del embarazo sola alcanza un AUC de 0.89; con las otras ocho variables la regresión logística llega a 0.908, y XGBoost agrega 0.005 más. Su efecto va en una sola dirección (la tasa de bajo peso pasa de 97.6&nbsp;% con 31 semanas o menos a 0.8&nbsp;% con 41 o más), algo que un modelo lineal ya representa bien. El techo lo pone la información del CNV, no el algoritmo.</p>
+<p><b>El desbalance es una decisión de punto de operación.</b> Balancear por pesos o con SMOTE-NC equivale a bajar el umbral: sube el recall a costa de la precisión, sin cambiar el orden de los casos. Con más de 200&nbsp;000 casos de bajo peso en el entrenamiento, SMOTE-NC no aporta información nueva, a diferencia de Khan et al. (2022), que tenían 89 casos, y fue de los modelos más costosos (cerca de una hora). El balanceo también infla las probabilidades: con <code>scale_pos_weight</code> ≈ 14.8, el modelo estima aproximadamente las odds reales multiplicadas por 14.8, así que habría que recalibrarlas antes de usarlas como riesgo absoluto.</p>
+<p><b>Comparación con la literatura.</b> Como en Ranjbar et al. (2023), XGBoost queda primero y la edad gestacional es el predictor principal, igual que en Khan et al. (2022) y Liu et al. (2022). A diferencia de Almeida et al. (2026), donde el random forest rindió peor que la regresión logística y el balanceo le restó discriminación, aquí los árboles quedan levemente por encima y el balanceo no redujo la discriminación de XGBoost; las cifras no son directamente comparables por las diferencias de población, variables, prevalencia y validación. En la práctica, la elección depende del costo de perder un caso frente al de una falsa alarma: un modelo balanceado detecta el 80&nbsp;% con unas dos falsas alarmas por caso, mientras que el baseline o SMOTE-NC generan muchas menos alertas. La accuracy confunde: el modelo con la mejor accuracy es el que más casos pierde.</p>
+
+<h2>6. Limitaciones</h2>
+<ul class="lim">
+  <li>La duración del embarazo se conoce al momento del parto, así que los modelos no sirven para una predicción prenatal.</li>
+  <li>El umbral se fijó en 0.5, como en los estudios revisados; la precisión, el recall y el F1 dependen de esa elección.</li>
+  <li>Se usó una sola partición de validación y un solo período de prueba, sin intervalos de confianza. Con diferencias de milésimas, no se puede asegurar que el orden de los modelos se mantenga en otros años, y elegir el modelo con métricas de la prueba puede dar una estimación algo optimista.</li>
+  <li>El CNV no registra variables clínicas (controles prenatales, anemia, hipertensión, IMC ni el antecedente de bajo peso), y el peso muestra redondeo en 2500&nbsp;g (16&nbsp;353 registros exactos), lo que agrega ruido a la etiqueta justo en el umbral.</li>
+  <li>Por costo de cómputo no se ajustaron todos los hiperparámetros (por ejemplo, la tasa de aprendizaje de XGBoost o los vecinos de SMOTE-NC). XGBoost se ejecutó en local y los demás modelos en Colab; el baseline reproduce exactamente sus cifras en ambos entornos.</li>
+</ul>
+
+<h2>7. Conclusiones</h2>
+<p>Con 9 variables del CNV, XGBoost balanceado es el modelo con mejor discriminación para identificar el bajo peso al nacer en el Perú (AUC-ROC de 0.913 y AUC-PR de 0.682 en 2024–2025) y detecta el 80&nbsp;% de los casos. Sin embargo, los cinco modelos discriminan casi igual: la mejora sobre una regresión logística simple es de milésimas, porque la duración del embarazo concentra casi toda la información disponible. Las decisiones con más efecto práctico son el tratamiento del desbalance y el umbral, que fijan el equilibrio entre casos detectados y falsas alarmas. Como trabajo futuro se propone elegir el umbral según el costo clínico de cada error, recalibrar las probabilidades, estimar la incertidumbre de las métricas con <i>bootstrap</i> y enlazar el CNV con registros de control prenatal, para incorporar variables clínicas y predecir antes del parto.</p>
+
+<h2>Referencias</h2>
+<div class="refs">
+  <p>Almeida, A. V. A., Santos, A. O. R., &amp; Nascimento, L. F. C. (2026). Predictive modeling with machine learning for low birth weight in the state of São Paulo: A retrospective population-based study. <i>São Paulo Medical Journal</i>. https://doi.org/10.1590/1516-3180.2025.3373.04052026</p>
+  <p>Breiman, L. (2001). Random forests. <i>Machine Learning, 45</i>(1), 5–32. https://doi.org/10.1023/A:1010933404324</p>
+  <p>Chawla, N. V., Bowyer, K. W., Hall, L. O., &amp; Kegelmeyer, W. P. (2002). SMOTE: Synthetic minority over-sampling technique. <i>Journal of Artificial Intelligence Research, 16</i>, 321–357. https://doi.org/10.1613/jair.953</p>
+  <p>Chen, T., &amp; Guestrin, C. (2016). XGBoost: A scalable tree boosting system. En <i>Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</i> (pp. 785–794). https://doi.org/10.1145/2939672.2939785</p>
+  <p>Khan, W., Zaki, N., Masud, M. M., Ahmad, A., Ali, L., Ali, N., &amp; Ahmed, L. A. (2022). Infant birth weight estimation and low birth weight classification in United Arab Emirates using machine learning algorithms. <i>Scientific Reports, 12</i>, 12110. https://doi.org/10.1038/s41598-022-14393-6</p>
+  <p>Liu, Z., Han, N., Su, T., Ji, Y., Bao, H., Zhou, S., Luo, S., Wang, H., Liu, J., &amp; Wang, H.-J. (2022). Interpretable machine learning to identify important predictors of birth weight: A prospective cohort study. <i>Frontiers in Pediatrics, 10</i>, 899954. https://doi.org/10.3389/fped.2022.899954</p>
+  <p>Ministerio de Salud del Perú. (2025). <i>Registros de nacidos vivos en el Perú (2015–2025)</i> [Conjunto de datos]. Plataforma Nacional de Datos Abiertos. https://www.datosabiertos.gob.pe/dataset/registros-de-nacidos-vivos-en-el-perú-2015–2025</p>
+  <p>Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., &amp; Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. <i>Journal of Machine Learning Research, 12</i>, 2825–2830.</p>
+  <p>Ranjbar, A., Montazeri, F., Farashah, M. V., Mehrnoush, V., Darsareh, F., &amp; Roozbeh, N. (2023). Machine learning-based approach for predicting low birth weight. <i>BMC Pregnancy and Childbirth, 23</i>, 803. https://doi.org/10.1186/s12884-023-06128-w</p>
+  <p>World Health Organization. (2014). <i>Global nutrition targets 2025: Low birth weight policy brief</i> (WHO/NMH/NHD/14.5). World Health Organization.</p>
+</div>
+
+</body>
+</html>
