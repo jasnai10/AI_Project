@@ -72,14 +72,9 @@ A continuación se presentan las variables del dataset, agrupadas en cinco bloqu
 
 Información obtenida del diccionario de datos del MINSA.
 
-## Variables objetivo del proyecto
+## Variable objetivo del proyecto
 
-El proyecto aborda el problema mediante modelos de regresión y de clasificación, por lo que se definen dos variables objetivo a partir de `PESO_NACIDO`.
-
-| Enfoque | Variable objetivo | Definición |
-|---|---|---|
-| Regresión | `PESO_NACIDO` | Peso del recién nacido expresado en gramos, tratado como variable continua |
-| Clasificación | `bajo_peso` | Variable binaria derivada de `PESO_NACIDO` según el umbral de bajo peso al nacer establecido por la Organización Mundial de la Salud |
+El proyecto es un problema de **clasificación binaria**: predecir si un recién nacido tiene bajo peso al nacer. La variable objetivo es `bajo_peso`, que se deriva de `PESO_NACIDO` según el umbral de bajo peso al nacer establecido por la Organización Mundial de la Salud. `PESO_NACIDO` se usa solo para construir esta variable y no es una entrada de los modelos.
 
 ```
 bajo_peso = 1   si PESO_NACIDO < 2500

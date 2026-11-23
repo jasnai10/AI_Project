@@ -10,7 +10,7 @@ El bajo peso al nacer (< 2500 g, criterio de la OMS) está asociado a mayor morb
 
 ## Objetivo
 
-Evaluar modelos de aprendizaje automático para predecir el bajo peso al nacer a partir de los registros del CNV, con un único conjunto de **9 variables**: las características de la madre y del parto registradas en el certificado, más la duración del embarazo (`DUR_EMB_PARTO`).
+Evaluar modelos de aprendizaje automático para **clasificar** a los recién nacidos según si tienen bajo peso al nacer (variable objetivo binaria `bajo_peso`: 1 si el peso es menor de 2500 g, 0 en otro caso) a partir de los registros del CNV, con un único conjunto de **9 variables**: las características de la madre y del parto registradas en el certificado, más la duración del embarazo (`DUR_EMB_PARTO`).
 
 La duración del embarazo es, por mucho, la variable dominante (AUC univariado de 0.89, frente a 0.58 o menos de cualquier otra), y se conoce **al momento del parto, no antes**. Por eso el modelo predice a partir de lo registrado al nacer y antes del pesaje, no con anticipación al parto; esta dependencia se declara en el EDA y la asociación de las demás variables se mide condicionada a ella.
 
